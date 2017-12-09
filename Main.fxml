@@ -123,7 +123,7 @@
                   </Text>
                   <TextField fx:id="tf_userName" layoutX="118.0" layoutY="95.0" prefHeight="31.0" prefWidth="149.0" promptText="User Name:" />
                   <PasswordField fx:id="tf_password" layoutX="118.0" layoutY="135.0" prefHeight="31.0" prefWidth="149.0" promptText="Password:" />
-                  <Button fx:id="btn_login" layoutX="92.0" layoutY="193.0" mnemonicParsing="false" onAction="#Login" onMouseClicked="#loginClick" prefHeight="25.0" prefWidth="85.0" style="-fx-background-color: #333;" text="Login" textFill="WHITE">
+                  <Button fx:id="btn_login" layoutX="92.0" layoutY="193.0" mnemonicParsing="false" onAction="#Login" prefHeight="25.0" prefWidth="85.0" style="-fx-background-color: #333;" text="Login" textFill="WHITE">
                      <font>
                         <Font name="HelveticaNeueLTPro-Roman" size="15.0" />
                      </font>

@@ -27,6 +27,9 @@ import javafx.scene.text.Text;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Locale;
+import javafx.concurrent.Task;
+import javafx.concurrent.WorkerStateEvent;
+import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.control.Button;
@@ -125,49 +128,17 @@ public class MainController implements Initializable {
                 updateScheduleTable();
             }
         });
-        
     }    
-    public void Login(){        
-        //Capture Input from Text Fields
-        String uName = tf_userName.getText();
-        String pwd = tf_password.getText();
-        //Build Query based on user input
-        String sql = "SELECT * FROM user WHERE userName = '" + uName + "' AND password = '" + pwd + "'";
-        ResultSet results = dbController.queryDB(sql);
-        
-        //Test if a matching username/password exists
-        try{
-            //if results.next() or results.getString() doesn't cause an error, a row was returned
-            results.next();
-            uName = results.getString("userName");
-            
-            //Set text on main screen to username, capitalize it
-            uName = uName.substring(0,1).toUpperCase() + uName.substring(1);
-            tf_loggedInUser.setText(uName);
-            
-            //Hide and disable the login screen
-            pane_login.setVisible(false);
-            pane_login.setManaged(false);   
-            
-            //Call method to check for Schedule Data
-            updateScheduleTable();
-            setTextDisplay("monthly");
-        
-        } catch(SQLException err){
-            System.out.println(err.getMessage());
-            Alert alert = new Alert(AlertType.WARNING);
-            alert.setTitle("Error");
-            alert.setHeaderText(null);
-            alert.setContentText("Incorrect Username or Password");
-            alert.showAndWait();
-        }
+    
+    public void Login(){
+        btn_login.setDisable(true);
+        checkValidLogin();              
     }
     
     private void updateScheduleTable(){
         String sql;
         //Clear all appointments
         appointments.clearAppointments();
-        
         //A bit complex but I wanted the customer Name, not just his ID
         if(rb_monthly.isSelected()){
             String monthRange = getMonthStart() + " and " + getMonthEnd();
@@ -251,6 +222,56 @@ public class MainController implements Initializable {
             tf_scheduleDisplayNotification.setText("Displaying schedule for the week of " + getWeekStart() + ".");
         }
         
+    }
+    //Queries the DB in background thread to determine username/password validity
+    private void checkValidLogin() {
+        Task<Boolean> task = new Task<Boolean>() {
+            @Override
+            protected Boolean call() throws Exception {
+                String sql = "SELECT * FROM user WHERE userName = '" + tf_userName.getText() + "' AND password = '" + tf_password.getText() + "'";
+                ResultSet results = dbController.queryDB(sql);
+
+                try {
+                    //if results.next() or results.getString() doesn't cause an error, a row was returned
+                    results.next();   
+                    String userName = results.getString("userName");
+                } catch (SQLException err) {
+                    //Uhoh! This error means db couldn't be reached or username and password is wrong
+                    return false;
+                }
+                //Everything worked - Success
+                return true;
+            }
+
+        };
+        //Handle success or failure
+        task.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED, new EventHandler<WorkerStateEvent>() {
+            @Override
+            public void handle(WorkerStateEvent event) {
+                //If task returns true (everything worked)
+                if(task.getValue()){
+                    String uName = tf_userName.getText();
+                    //Captialize the name
+                    uName = uName.substring(0,1).toUpperCase() + uName.substring(1);
+                    tf_loggedInUser.setText(uName); 
+                    //Hide and disable the login screen
+                    pane_login.setVisible(false);
+                    pane_login.setManaged(false);
+                    //Call method to check for Schedule Data
+                    updateScheduleTable();
+                    setTextDisplay("monthly");
+                }else {
+                    btn_login.setDisable(false);                    
+                    Alert alert = new Alert(AlertType.WARNING);
+                    alert.setTitle("Error");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Incorrect Username or Password");
+                    alert.showAndWait();
+                }
+            }
+        });
+        
+        new Thread(task).start();
     }
     
     
