@@ -7,18 +7,15 @@ import java.net.URL;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
+import java.time.LocalDate;
+import java.time.temporal.WeekFields;
 import java.util.ResourceBundle;
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TableColumn;
@@ -29,8 +26,12 @@ import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
+import java.util.Locale;
+import javafx.event.Event;
+import javafx.event.EventHandler;
+import javafx.scene.control.Button;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.RadioButton;
 
 
 /**
@@ -69,8 +70,7 @@ public class MainController implements Initializable {
     @FXML
     private TableColumn<ObservableList<Appointment>,Date> tblCol_schedule_lastUpdate;
     @FXML
-    private TableColumn<ObservableList<Appointment>,String> tblCol_schedule_lastUpdateBy;
-    
+    private TableColumn<ObservableList<Appointment>,String> tblCol_schedule_lastUpdateBy;    
     //Panes
     @FXML
     private Pane pane_login;
@@ -80,51 +80,29 @@ public class MainController implements Initializable {
     @FXML
     private PasswordField tf_password;
     @FXML
-    private Text tf_loggedInUser;
+    private Text tf_loggedInUser;  
+    @FXML
+    private Text tf_scheduleDisplayNotification;
+    //Date Picker
+    @FXML
+    private DatePicker datePicker_schedule;
+    @FXML
+    private RadioButton rb_monthly;
+    //Buttons
+    @FXML
+    private Button btn_login;
     
-    //Choice Boxes
-    @FXML
-    private ChoiceBox choiceBox_months;
-    @FXML
-    private ChoiceBox choiceBox_years;
     
     //Create appointments class to hold appointments
     Appointments appointments = new Appointments();
-
     //Create DB controller to initiate the query
     DBController dbController = new DBController();
-    String[] monthsList = {"January","February","March","April","May","June",
-        "July","August","September","October","November","December"};
-    
-    
      
     @Override
     public void initialize(URL url, ResourceBundle rb) {        
         tbl_schedule.setPlaceholder(new Label("No Pending Appointments."));        
-        //Add all months to choicebox
-        choiceBox_months.setItems(FXCollections.observableArrayList(monthsList));        
-        //Get the current Date and set ChoiceBox to current Month
-        DateFormat dateFormat = new SimpleDateFormat("MMMM");
-        java.util.Date date;
-        date = new java.util.Date();
-        //Create array of 6 years to add to choice box
-        int[] years = new int[6];
-        int year = Calendar.getInstance().get(Calendar.YEAR);
-        for (int i = 0; i < 6; i++) {
-            years[i] = year + i-3;
-        }
-        //Add years to choose from
-        choiceBox_years.setItems(FXCollections.observableArrayList(Integer.toString(years[0]),
-                Integer.toString(years[1]),
-                Integer.toString(years[2]),
-                Integer.toString(years[3]),
-                Integer.toString(years[4]),
-                Integer.toString(years[5])));
-        //Set value to current year
-        choiceBox_years.setValue(Integer.toString(year));
-        //Set value to current month        
-        choiceBox_months.setValue(dateFormat.format(date));
-        
+        //Set datepicker to current day
+        datePicker_schedule.setValue(LocalDate.now());        
         //Set up Table and Columns to receive and display data
         tblCol_schedule_aptID.setCellValueFactory(new PropertyValueFactory<>("aptID"));
         tblCol_schedule_customer.setCellValueFactory(new PropertyValueFactory<>("customerName"));
@@ -140,24 +118,16 @@ public class MainController implements Initializable {
         tblCol_schedule_lastUpdate.setCellValueFactory(new PropertyValueFactory<>("lastUpdate"));
         tblCol_schedule_lastUpdateBy.setCellValueFactory(new PropertyValueFactory<>("lastUpdateBy"));
         tbl_schedule.setItems(appointments.getAppointmentList());
-        
-        //Add change listeners to the choice boxes
-        choiceBox_months.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>(){
+        //Add event listener to handle date selection changes
+        datePicker_schedule.setOnAction(new EventHandler(){
             @Override
-            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-                updateScheduleTable();
-            }        
-        });
-        choiceBox_years.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<String>(){
-            @Override
-            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+            public void handle(Event event) {
                 updateScheduleTable();
             }
-        
         });
+        
     }    
-    
-    public void Login(){
+    public void Login(){        
         //Capture Input from Text Fields
         String uName = tf_userName.getText();
         String pwd = tf_password.getText();
@@ -180,7 +150,8 @@ public class MainController implements Initializable {
             pane_login.setManaged(false);   
             
             //Call method to check for Schedule Data
-            updateScheduleTable();            
+            updateScheduleTable();
+            setTextDisplay("monthly");
         
         } catch(SQLException err){
             System.out.println(err.getMessage());
@@ -193,18 +164,28 @@ public class MainController implements Initializable {
     }
     
     private void updateScheduleTable(){
+        String sql;
         //Clear all appointments
         appointments.clearAppointments();
-        String monthStart = getMonthStart();
-        String monthEnd = getMonthEnd();
-        String monthRange = monthStart + " and " + monthEnd;
         
         //A bit complex but I wanted the customer Name, not just his ID
-        String sql = "Select ap.appointmentID,c.customerName,ap.title,ap.description,ap.location,ap.contact,"
+        if(rb_monthly.isSelected()){
+            String monthRange = getMonthStart() + " and " + getMonthEnd();
+            sql = "Select ap.appointmentID,c.customerName,ap.title,ap.description,ap.location,ap.contact,"
                 + "ap.url,ap.start,ap.end,ap.createDate,ap.createdBy,ap.lastUpdate,"
                 + "ap.lastUpdateBy from appointment AS ap JOIN customer AS c ON ap.customerID = c.customerID WHERE "
                 + "ap.start BETWEEN " + monthRange + " OR ap.end BETWEEN " + monthRange +
-                "ORDER BY ap.start";        
+                "ORDER BY ap.start";
+            setTextDisplay("monthly");
+        } else {
+            String weekRange = getWeekStart() + " and " + getWeekEnd();
+            sql = "Select ap.appointmentID,c.customerName,ap.title,ap.description,ap.location,ap.contact,"
+                + "ap.url,ap.start,ap.end,ap.createDate,ap.createdBy,ap.lastUpdate,"
+                + "ap.lastUpdateBy from appointment AS ap JOIN customer AS c ON ap.customerID = c.customerID WHERE "
+                + "ap.start BETWEEN " + weekRange + " OR ap.end BETWEEN " + weekRange +
+                "ORDER BY ap.start";   
+            setTextDisplay("weekly");
+        }
         ResultSet rs = dbController.queryDB(sql);
         
         //For each row, create a new appointment and add to the list of appointments
@@ -217,8 +198,8 @@ public class MainController implements Initializable {
                         rs.getString("location"),
                         rs.getString("contact"),
                         rs.getString("url"),
-                        rs.getDate("start"),
-                        rs.getDate("end"),
+                        rs.getTimestamp("start"),
+                        rs.getTimestamp("end"),
                         rs.getDate("createDate"),
                         rs.getString("createdBy"),
                         rs.getDate("lastUpdate"),
@@ -229,34 +210,52 @@ public class MainController implements Initializable {
             System.out.println(err.getMessage());
         }
     }
-    
-    private String getMonthStart() {
-        //Get selected month and year form choiceboxes
-        String month = choiceBox_months.getValue().toString();
-        String year = choiceBox_years.getValue().toString();
-        //Actual month number for the SQL needs to be +1, not zero indexed
-        int monthNumber = Arrays.asList(monthsList).indexOf(month) + 1;
-        
-        return "'" + year + "-"+ monthNumber +"-1'";
+    //Determine first day of the month
+    private String getMonthStart() {        
+        LocalDate dateSelected = datePicker_schedule.getValue();
+        String sqlDateMonthStarts = "'" + Integer.toString(dateSelected.getYear()) + "-" + dateSelected.getMonthValue() + "-1'";        
+        return sqlDateMonthStarts;
     }
-    
+    //Determine last day of the month
     private String getMonthEnd() {
-        //Get selected month and year from choiceboxes
-        String month = choiceBox_months.getValue().toString();
-        String year = choiceBox_years.getValue().toString();
-        //Actual month number for the SQL needs to be +1, not zero indexed
-        int monthNumber = Arrays.asList(monthsList).indexOf(month) + 1;
-        
-        //Figure out how many days are in the month/year selected(-1 because 0 index)
-        Calendar cal = new GregorianCalendar(Integer.parseInt(year),monthNumber-1,1);
+        LocalDate dateSelected = datePicker_schedule.getValue();
+        Calendar cal = new GregorianCalendar(dateSelected.getYear(),dateSelected.getMonthValue(),1);
         int numberOfDays = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
         
-        return "'" + year + "-" + monthNumber + "-"+ numberOfDays +"'";
+        String sqlDateMonthEnd = "'" + Integer.toString(dateSelected.getYear()) + "-" + dateSelected.getMonthValue()+ "-" + numberOfDays +"'";
+        return sqlDateMonthEnd;
     }
-    
+    //Determine first day of the week
+    private String getWeekStart(){
+        LocalDate dateSelected = datePicker_schedule.getValue();
+        String weekStart = "'"+ dateSelected.with(WeekFields.of(Locale.US).dayOfWeek(),1L).toString()+"'";
+        return weekStart;
+    }
+    //Determine last day of the week
+    private String getWeekEnd(){
+        LocalDate dateSelected = datePicker_schedule.getValue();
+        String weekEnd = "'" + dateSelected.with(WeekFields.of(Locale.US).dayOfWeek(),7L).toString() + "'";
+        return weekEnd;
+    }
+    //Close the program
     public void closeApplication(){
         Platform.exit();
     }
+    //Display text to show current results being displayed
+    private void setTextDisplay(String displayType) {
+        LocalDate dateSelected = datePicker_schedule.getValue();
+        if("monthly".equals(displayType)){
+            tf_scheduleDisplayNotification.setText("Displaying schedule for the month of " + dateSelected.getMonth().toString().toLowerCase() + ", " +
+                    dateSelected.getYear() + ".");
+        }else {
+            tf_scheduleDisplayNotification.setText("Displaying schedule for the week of " + getWeekStart() + ".");
+        }
+        
+    }
+    
+    
+    
+    
     
     
     

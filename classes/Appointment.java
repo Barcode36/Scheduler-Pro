@@ -6,6 +6,7 @@
 package database.scheduler.michael.peels.classes;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 
 
 /**
@@ -20,14 +21,14 @@ public class Appointment {
     private String location;
     private String contact;
     private String url;
-    private Date startDate;
-    private Date endDate;
+    private Timestamp startDate;
+    private Timestamp endDate;
     private Date createdDate;
     private String createdBy;
     private Date lastUpdate;
     private String lastUpdateBy;
 
-    public Appointment(int aptID, String customerName, String title, String description, String location, String contact, String url, Date startDate, Date endDate, Date createdDate, String createdBy, Date lastUpdate, String lastUpdateBy) {
+    public Appointment(int aptID, String customerName, String title, String description, String location, String contact, String url, Timestamp startDate, Timestamp endDate, Date createdDate, String createdBy, Date lastUpdate, String lastUpdateBy) {
         this.aptID = aptID;
         this.customerName = customerName;
         this.title = title;
@@ -102,19 +103,19 @@ public class Appointment {
         this.url = url;
     }
 
-    public Date getStartDate() {
+    public Timestamp getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(Date startDate) {
+    public void setStartDate(Timestamp startDate) {
         this.startDate = startDate;
     }
 
-    public Date getEndDate() {
+    public Timestamp getEndDate() {
         return endDate;
     }
 
-    public void setEndDate(Date endDate) {
+    public void setEndDate(Timestamp endDate) {
         this.endDate = endDate;
     }
 

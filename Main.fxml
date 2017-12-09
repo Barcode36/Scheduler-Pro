@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.TableColumn?>
@@ -9,6 +9,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
@@ -43,26 +44,13 @@
             </ImageView>
          </children>
       </Pane>
-      <Pane layoutX="190.0" layoutY="137.0" prefHeight="646.0" prefWidth="1071.0" style="-fx-background-color: #ffffff;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="189.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="137.0">
+      <AnchorPane layoutX="122.0" layoutY="136.0" AnchorPane.bottomAnchor="1.0" AnchorPane.leftAnchor="122.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="136.0">
          <children>
-            <RadioButton layoutX="886.0" layoutY="573.0" mnemonicParsing="false" prefHeight="19.0" prefWidth="78.0" selected="true" style="-fx-mark-hgihlight-color: #104BB0; -fx-mark-color: #104BB0;" text="Monthly" textFill="#104bb0">
-               <font>
-                  <Font name="HelveticaNeueLTPro-Roman" size="14.0" />
-               </font>
-               <toggleGroup>
-                  <ToggleGroup fx:id="scheduleTimeFrame" />
-               </toggleGroup>
-            </RadioButton>
-            <RadioButton layoutX="971.0" layoutY="573.0" mnemonicParsing="false" prefHeight="19.0" prefWidth="72.0" style="-fx-mark-hgihlight-color: #104BB0; -fx-mark-color: #104BB0;" text="Weekly" textFill="#104bb0" toggleGroup="$scheduleTimeFrame">
-               <font>
-                  <Font name="HelveticaNeueLTPro-Roman" size="14.0" />
-               </font>
-            </RadioButton>
-            <TableView fx:id="tbl_schedule" prefHeight="561.0" prefWidth="1066.0">
+            <TableView fx:id="tbl_schedule" prefHeight="561.0" prefWidth="1140.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
               <columns>
-                <TableColumn fx:id="tblCol_schedule_aptID" prefWidth="75.0" text="Appointment ID" />
-                <TableColumn fx:id="tblCol_schedule_customer" prefWidth="75.0" text="CustomerID" />
-                  <TableColumn fx:id="tblCol_schedule_title" prefWidth="75.0" text="Title" />
+                <TableColumn fx:id="tblCol_schedule_aptID" prefWidth="36.0" text="ID" />
+                <TableColumn fx:id="tblCol_schedule_customer" prefWidth="104.0" text="Customer Name" />
+                  <TableColumn fx:id="tblCol_schedule_title" prefWidth="70.0" text="Title" />
                   <TableColumn fx:id="tblCol_schedule_description" prefWidth="104.0" text="Description" />
                   <TableColumn fx:id="tblCol_schedule_location" prefWidth="75.0" text="Location" />
                   <TableColumn fx:id="tblCol_schedule_contact" prefWidth="75.0" text="Contact" />
@@ -77,14 +65,34 @@
                <columnResizePolicy>
                   <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
                </columnResizePolicy>
+               <effect>
+                  <DropShadow offsetY="1.0" />
+               </effect>
             </TableView>
-            <ChoiceBox fx:id="choiceBox_months" layoutX="889.0" layoutY="602.0" prefWidth="150.0" />
-            <ChoiceBox fx:id="choiceBox_years" layoutX="772.0" layoutY="602.0" prefHeight="25.0" prefWidth="114.0" />
+            <DatePicker fx:id="datePicker_schedule" layoutX="761.0" layoutY="570.0" />
+            <Text fx:id="tf_scheduleDisplayNotification" fill="#104bb0" layoutX="645.0" layoutY="621.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Displaying schedule for the month of: " wrappingWidth="480.7440185546875">
+               <font>
+                  <Font name="HelveticaNeueLTPro-Roman" size="17.0" />
+               </font>
+            </Text>
+            <RadioButton fx:id="rb_monthly" layoutX="961.0" layoutY="573.0" mnemonicParsing="false" prefHeight="19.0" prefWidth="78.0" selected="true" style="-fx-mark-hgihlight-color: #104BB0; -fx-mark-color: #104BB0;" text="Monthly" textFill="#104bb0">
+               <font>
+                  <Font name="HelveticaNeueLTPro-Roman" size="14.0" />
+               </font>
+               <toggleGroup>
+                  <ToggleGroup fx:id="scheduleTimeFrame" />
+               </toggleGroup>
+            </RadioButton>
+            <RadioButton layoutX="1054.0" layoutY="573.0" mnemonicParsing="false" prefHeight="19.0" prefWidth="72.0" style="-fx-mark-hgihlight-color: #104BB0; -fx-mark-color: #104BB0;" text="Weekly" textFill="#104bb0" toggleGroup="$scheduleTimeFrame">
+               <font>
+                  <Font name="HelveticaNeueLTPro-Roman" size="14.0" />
+               </font>
+            </RadioButton>
          </children>
-      </Pane>
-      <VBox layoutY="137.0" prefHeight="646.0" prefWidth="189.0" AnchorPane.leftAnchor="0.0">
+      </AnchorPane>
+      <VBox layoutY="137.0" prefHeight="646.0" prefWidth="122.0" AnchorPane.leftAnchor="0.0">
          <children>
-            <ToggleButton mnemonicParsing="false" prefHeight="52.0" prefWidth="189.0" selected="true" style="-fx-base: #104BB0; -fx-border-radius: 0 0 0 0; -fx-background-radius: 0 0 0 0;" text="Schedule" textFill="WHITE">
+            <ToggleButton mnemonicParsing="false" prefHeight="52.0" prefWidth="124.0" selected="true" style="-fx-base: #104BB0; -fx-border-radius: 0 0 0 0; -fx-background-radius: 0 0 0 0;" text="Schedule" textFill="WHITE">
                <font>
                   <Font name="HelveticaNeueLTPro-Roman" size="18.0" />
                </font>
@@ -92,12 +100,12 @@
                   <ToggleGroup fx:id="primaryWindowSelectors" />
                </toggleGroup>
             </ToggleButton>
-            <ToggleButton mnemonicParsing="false" prefHeight="52.0" prefWidth="189.0" style="-fx-base: #104BB0; -fx-border-radius: 0 0 0 0; -fx-background-radius: 0 0 0 0;" text="Customers" textFill="WHITE" toggleGroup="$primaryWindowSelectors">
+            <ToggleButton mnemonicParsing="false" prefHeight="52.0" prefWidth="124.0" style="-fx-base: #104BB0; -fx-border-radius: 0 0 0 0; -fx-background-radius: 0 0 0 0;" text="Customers" textFill="WHITE" toggleGroup="$primaryWindowSelectors">
                <font>
                   <Font name="HelveticaNeueLTPro-Roman" size="18.0" />
                </font>
             </ToggleButton>
-            <ToggleButton mnemonicParsing="false" prefHeight="52.0" prefWidth="189.0" style="-fx-base: #104BB0; -fx-border-radius: 0 0 0 0; -fx-background-radius: 0 0 0 0;" text="Reports" textFill="WHITE" toggleGroup="$primaryWindowSelectors">
+            <ToggleButton mnemonicParsing="false" prefHeight="52.0" prefWidth="124.0" style="-fx-base: #104BB0; -fx-border-radius: 0 0 0 0; -fx-background-radius: 0 0 0 0;" text="Reports" textFill="WHITE" toggleGroup="$primaryWindowSelectors">
                <font>
                   <Font name="HelveticaNeueLTPro-Roman" size="18.0" />
                </font>
@@ -115,7 +123,7 @@
                   </Text>
                   <TextField fx:id="tf_userName" layoutX="118.0" layoutY="95.0" prefHeight="31.0" prefWidth="149.0" promptText="User Name:" />
                   <PasswordField fx:id="tf_password" layoutX="118.0" layoutY="135.0" prefHeight="31.0" prefWidth="149.0" promptText="Password:" />
-                  <Button layoutX="92.0" layoutY="193.0" mnemonicParsing="false" onAction="#Login" prefHeight="25.0" prefWidth="85.0" style="-fx-background-color: #333;" text="Login" textFill="WHITE">
+                  <Button fx:id="btn_login" layoutX="92.0" layoutY="193.0" mnemonicParsing="false" onAction="#Login" onMouseClicked="#loginClick" prefHeight="25.0" prefWidth="85.0" style="-fx-background-color: #333;" text="Login" textFill="WHITE">
                      <font>
                         <Font name="HelveticaNeueLTPro-Roman" size="15.0" />
                      </font>
