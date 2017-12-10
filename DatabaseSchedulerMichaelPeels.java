@@ -14,6 +14,14 @@ import javafx.stage.Stage;
 /**
  *
  * @author Michael
+ * username: test
+ * password: test
+ * 
+ * alternate username: michael
+ * alternate password: password1
+ * 
+ * username + password are case sensitive
+ * 
  */
 public class DatabaseSchedulerMichaelPeels extends Application {
     

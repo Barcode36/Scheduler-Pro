@@ -5,8 +5,11 @@
  */
 package database.scheduler.michael.peels.classes;
 
-import java.sql.Date;
 import java.sql.Timestamp;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 
 /**
@@ -107,7 +110,7 @@ public class Appointment {
         return startDate;
     }
 
-    public void setStartDate(Timestamp startDate) {
+    public void setStartDate(Timestamp startDate) {        
         this.startDate = startDate;
     }
 

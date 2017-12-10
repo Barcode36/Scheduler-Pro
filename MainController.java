@@ -4,9 +4,10 @@ import database.scheduler.michael.peels.classes.Appointment;
 import database.scheduler.michael.peels.classes.Appointments;
 import database.scheduler.michael.peels.classes.DBController;
 import java.net.URL;
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.temporal.WeekFields;
 import java.util.ResourceBundle;
@@ -25,55 +26,54 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.TimeZone;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
-import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.control.Button;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.RadioButton;
 
-
 /**
  * FXML Controller class
  *
  * @author Michael
  */
-
-
 public class MainController implements Initializable {
+
     //Schedule table and columns
     @FXML
     private TableView<Appointment> tbl_schedule;
     @FXML
-    private TableColumn<ObservableList<Appointment>,Integer> tblCol_schedule_aptID;
+    private TableColumn<ObservableList<Appointment>, Integer> tblCol_schedule_aptID;
     @FXML
-    private TableColumn<ObservableList<Appointment>,String> tblCol_schedule_customer;
+    private TableColumn<ObservableList<Appointment>, String> tblCol_schedule_customer;
     @FXML
-    private TableColumn<ObservableList<Appointment>,String> tblCol_schedule_title;
+    private TableColumn<ObservableList<Appointment>, String> tblCol_schedule_title;
     @FXML
-    private TableColumn<ObservableList<Appointment>,String> tblCol_schedule_description;
+    private TableColumn<ObservableList<Appointment>, String> tblCol_schedule_description;
     @FXML
-    private TableColumn<ObservableList<Appointment>,String> tblCol_schedule_location;
+    private TableColumn<ObservableList<Appointment>, String> tblCol_schedule_location;
     @FXML
-    private TableColumn<ObservableList<Appointment>,String> tblCol_schedule_contact;
+    private TableColumn<ObservableList<Appointment>, String> tblCol_schedule_contact;
     @FXML
-    private TableColumn<ObservableList<Appointment>,String> tblCol_schedule_url;
+    private TableColumn<ObservableList<Appointment>, String> tblCol_schedule_url;
     @FXML
-    private TableColumn<ObservableList<Appointment>,Date> tblCol_schedule_start;
+    private TableColumn<ObservableList<Appointment>, Date> tblCol_schedule_start;
     @FXML
-    private TableColumn<ObservableList<Appointment>,Date> tblCol_schedule_end;
+    private TableColumn<ObservableList<Appointment>, Date> tblCol_schedule_end;
     @FXML
-    private TableColumn<ObservableList<Appointment>,Date> tblCol_schedule_createdDate;
+    private TableColumn<ObservableList<Appointment>, Date> tblCol_schedule_createdDate;
     @FXML
-    private TableColumn<ObservableList<Appointment>,String> tblCol_schedule_createdBy;
+    private TableColumn<ObservableList<Appointment>, String> tblCol_schedule_createdBy;
     @FXML
-    private TableColumn<ObservableList<Appointment>,Date> tblCol_schedule_lastUpdate;
+    private TableColumn<ObservableList<Appointment>, Date> tblCol_schedule_lastUpdate;
     @FXML
-    private TableColumn<ObservableList<Appointment>,String> tblCol_schedule_lastUpdateBy;    
+    private TableColumn<ObservableList<Appointment>, String> tblCol_schedule_lastUpdateBy;
     //Panes
     @FXML
     private Pane pane_login;
@@ -83,9 +83,19 @@ public class MainController implements Initializable {
     @FXML
     private PasswordField tf_password;
     @FXML
-    private Text tf_loggedInUser;  
+    private Text tf_loggedInUser;
     @FXML
     private Text tf_scheduleDisplayNotification;
+    @FXML
+    private Text tf_customerName;
+    @FXML
+    private Text tf_appointmentTime;
+    @FXML
+    private Text tf_appointmentTitle;
+    @FXML
+    private Text tf_appointmentLocation;
+    @FXML
+    private Text tf_appointmentDescription;
     //Date Picker
     @FXML
     private DatePicker datePicker_schedule;
@@ -94,18 +104,19 @@ public class MainController implements Initializable {
     //Buttons
     @FXML
     private Button btn_login;
-    
-    
+    @FXML
+    private Button btn_viewCustomer;
+
     //Create appointments class to hold appointments
     Appointments appointments = new Appointments();
     //Create DB controller to initiate the query
     DBController dbController = new DBController();
-     
+
     @Override
-    public void initialize(URL url, ResourceBundle rb) {        
-        tbl_schedule.setPlaceholder(new Label("No Pending Appointments."));        
+    public void initialize(URL url, ResourceBundle rb) {
+        tbl_schedule.setPlaceholder(new Label("No Pending Appointments."));
         //Set datepicker to current day
-        datePicker_schedule.setValue(LocalDate.now());        
+        datePicker_schedule.setValue(LocalDate.now());
         //Set up Table and Columns to receive and display data
         tblCol_schedule_aptID.setCellValueFactory(new PropertyValueFactory<>("aptID"));
         tblCol_schedule_customer.setCellValueFactory(new PropertyValueFactory<>("customerName"));
@@ -122,46 +133,51 @@ public class MainController implements Initializable {
         tblCol_schedule_lastUpdateBy.setCellValueFactory(new PropertyValueFactory<>("lastUpdateBy"));
         tbl_schedule.setItems(appointments.getAppointmentList());
         //Add event listener to handle date selection changes
-        datePicker_schedule.setOnAction(new EventHandler(){
+        datePicker_schedule.setOnAction(new EventHandler() {
             @Override
             public void handle(Event event) {
                 updateScheduleTable();
             }
         });
-    }    
-    
-    public void Login(){
-        btn_login.setDisable(true);
-        checkValidLogin();              
+        tbl_schedule.getSelectionModel().selectedIndexProperty().addListener((obs, oldSelection, newSelection) -> {
+            updateSelectedSchedule(newSelection);
+
+        });
+
     }
-    
-    private void updateScheduleTable(){
+
+    public void Login() {
+        btn_login.setDisable(true);
+        checkValidLogin();
+    }
+
+    private void updateScheduleTable() {
         String sql;
         //Clear all appointments
         appointments.clearAppointments();
         //A bit complex but I wanted the customer Name, not just his ID
-        if(rb_monthly.isSelected()){
+        if (rb_monthly.isSelected()) {
             String monthRange = getMonthStart() + " and " + getMonthEnd();
             sql = "Select ap.appointmentID,c.customerName,ap.title,ap.description,ap.location,ap.contact,"
-                + "ap.url,ap.start,ap.end,ap.createDate,ap.createdBy,ap.lastUpdate,"
-                + "ap.lastUpdateBy from appointment AS ap JOIN customer AS c ON ap.customerID = c.customerID WHERE "
-                + "ap.start BETWEEN " + monthRange + " OR ap.end BETWEEN " + monthRange +
-                "ORDER BY ap.start";
+                    + "ap.url,ap.start,ap.end,ap.createDate,ap.createdBy,ap.lastUpdate,"
+                    + "ap.lastUpdateBy from appointment AS ap JOIN customer AS c ON ap.customerID = c.customerID WHERE "
+                    + "ap.start BETWEEN " + monthRange + " OR ap.end BETWEEN " + monthRange
+                    + "ORDER BY ap.start";
             setTextDisplay("monthly");
         } else {
             String weekRange = getWeekStart() + " and " + getWeekEnd();
             sql = "Select ap.appointmentID,c.customerName,ap.title,ap.description,ap.location,ap.contact,"
-                + "ap.url,ap.start,ap.end,ap.createDate,ap.createdBy,ap.lastUpdate,"
-                + "ap.lastUpdateBy from appointment AS ap JOIN customer AS c ON ap.customerID = c.customerID WHERE "
-                + "ap.start BETWEEN " + weekRange + " OR ap.end BETWEEN " + weekRange +
-                "ORDER BY ap.start";   
+                    + "ap.url,ap.start,ap.end,ap.createDate,ap.createdBy,ap.lastUpdate,"
+                    + "ap.lastUpdateBy from appointment AS ap JOIN customer AS c ON ap.customerID = c.customerID WHERE "
+                    + "ap.start BETWEEN " + weekRange + " OR ap.end BETWEEN " + weekRange
+                    + "ORDER BY ap.start";
             setTextDisplay("weekly");
         }
         ResultSet rs = dbController.queryDB(sql);
-        
+
         //For each row, create a new appointment and add to the list of appointments
-        try{            
-            while(rs.next()){
+        try {
+            while (rs.next()) {
                 appointments.addAppointment(new Appointment(rs.getInt("appointmentID"),
                         rs.getString("customerName"),
                         rs.getString("title"),
@@ -176,64 +192,71 @@ public class MainController implements Initializable {
                         rs.getDate("lastUpdate"),
                         rs.getString("lastUpdateBy")));
             }
-            
-        }catch(SQLException err){
-            System.out.println(err.getMessage());
+
+        } catch (SQLException err) {
+            //System.out.println(err.getMessage());
         }
     }
+
     //Determine first day of the month
-    private String getMonthStart() {        
+    private String getMonthStart() {
         LocalDate dateSelected = datePicker_schedule.getValue();
-        String sqlDateMonthStarts = "'" + Integer.toString(dateSelected.getYear()) + "-" + dateSelected.getMonthValue() + "-1'";        
+        String sqlDateMonthStarts = "'" + Integer.toString(dateSelected.getYear()) + "-" + dateSelected.getMonthValue() + "-1'";
         return sqlDateMonthStarts;
     }
+
     //Determine last day of the month
     private String getMonthEnd() {
         LocalDate dateSelected = datePicker_schedule.getValue();
-        Calendar cal = new GregorianCalendar(dateSelected.getYear(),dateSelected.getMonthValue(),1);
+        Calendar cal = new GregorianCalendar(dateSelected.getYear(), dateSelected.getMonthValue(), 1);
         int numberOfDays = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
-        
-        String sqlDateMonthEnd = "'" + Integer.toString(dateSelected.getYear()) + "-" + dateSelected.getMonthValue()+ "-" + numberOfDays +"'";
+
+        String sqlDateMonthEnd = "'" + Integer.toString(dateSelected.getYear()) + "-" + dateSelected.getMonthValue() + "-" + numberOfDays + "'";
         return sqlDateMonthEnd;
     }
+
     //Determine first day of the week
-    private String getWeekStart(){
+    private String getWeekStart() {
         LocalDate dateSelected = datePicker_schedule.getValue();
-        String weekStart = "'"+ dateSelected.with(WeekFields.of(Locale.US).dayOfWeek(),1L).toString()+"'";
+        String weekStart = "'" + dateSelected.with(WeekFields.of(Locale.US).dayOfWeek(), 1L).toString() + "'";
         return weekStart;
     }
+
     //Determine last day of the week
-    private String getWeekEnd(){
+    private String getWeekEnd() {
         LocalDate dateSelected = datePicker_schedule.getValue();
-        String weekEnd = "'" + dateSelected.with(WeekFields.of(Locale.US).dayOfWeek(),7L).toString() + "'";
+        String weekEnd = "'" + dateSelected.with(WeekFields.of(Locale.US).dayOfWeek(), 7L).toString() + "'";
         return weekEnd;
     }
+
     //Close the program
-    public void closeApplication(){
+    public void closeApplication() {
         Platform.exit();
     }
+
     //Display text to show current results being displayed
     private void setTextDisplay(String displayType) {
         LocalDate dateSelected = datePicker_schedule.getValue();
-        if("monthly".equals(displayType)){
-            tf_scheduleDisplayNotification.setText("Displaying schedule for the month of " + dateSelected.getMonth().toString().toLowerCase() + ", " +
-                    dateSelected.getYear() + ".");
-        }else {
+        if ("monthly".equals(displayType)) {
+            tf_scheduleDisplayNotification.setText("Displaying schedule for the month of " + dateSelected.getMonth().toString().toLowerCase() + ", "
+                    + dateSelected.getYear() + ".");
+        } else {
             tf_scheduleDisplayNotification.setText("Displaying schedule for the week of " + getWeekStart() + ".");
         }
-        
+
     }
+
     //Queries the DB in background thread to determine username/password validity
     private void checkValidLogin() {
         Task<Boolean> task = new Task<Boolean>() {
             @Override
             protected Boolean call() throws Exception {
-                String sql = "SELECT * FROM user WHERE userName = '" + tf_userName.getText() + "' AND password = '" + tf_password.getText() + "'";
+                String sql = "SELECT * FROM user WHERE CAST(userName AS BINARY)  = '" + tf_userName.getText() + "' AND CAST(password AS BINARY) = '" + tf_password.getText() + "'";
                 ResultSet results = dbController.queryDB(sql);
 
                 try {
                     //if results.next() or results.getString() doesn't cause an error, a row was returned
-                    results.next();   
+                    results.next();
                     String userName = results.getString("userName");
                 } catch (SQLException err) {
                     //Uhoh! This error means db couldn't be reached or username and password is wrong
@@ -249,19 +272,19 @@ public class MainController implements Initializable {
             @Override
             public void handle(WorkerStateEvent event) {
                 //If task returns true (everything worked)
-                if(task.getValue()){
+                if (task.getValue()) {
                     String uName = tf_userName.getText();
                     //Captialize the name
-                    uName = uName.substring(0,1).toUpperCase() + uName.substring(1);
-                    tf_loggedInUser.setText(uName); 
+                    uName = uName.substring(0, 1).toUpperCase() + uName.substring(1);
+                    tf_loggedInUser.setText(uName);
                     //Hide and disable the login screen
                     pane_login.setVisible(false);
                     pane_login.setManaged(false);
                     //Call method to check for Schedule Data
                     updateScheduleTable();
                     setTextDisplay("monthly");
-                }else {
-                    btn_login.setDisable(false);                    
+                } else {
+                    btn_login.setDisable(false);
                     Alert alert = new Alert(AlertType.WARNING);
                     alert.setTitle("Error");
                     alert.setHeaderText(null);
@@ -270,21 +293,50 @@ public class MainController implements Initializable {
                 }
             }
         });
-        
+
         new Thread(task).start();
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+    private void updateSelectedSchedule(Number newSelection) {
+        if (newSelection != null && tbl_schedule.getSelectionModel().getSelectedItem() != null) {
+            Appointment selectedAppointment = tbl_schedule.getSelectionModel().getSelectedItem();
+            SimpleDateFormat sdfStart = new SimpleDateFormat("hh:mm-");
+            sdfStart.setTimeZone(TimeZone.getDefault());
+            SimpleDateFormat sdfEnd = new SimpleDateFormat("hh:mm a dd, MMMM, yyyy");
+            sdfEnd.setTimeZone(TimeZone.getDefault());
+
+            //Determine offset based on location of user and location of Office
+            int timeOffset = 0;
+            if (selectedAppointment.getLocation().equals("New York")) {
+                TimeZone ny_tz = TimeZone.getTimeZone("America/New_York");
+                TimeZone my_tz = TimeZone.getDefault();
+                Calendar ny_cal = Calendar.getInstance(ny_tz);
+                Calendar my_cal = Calendar.getInstance(my_tz);                
+                int offsetNY = ny_cal.get(Calendar.ZONE_OFFSET) + ny_cal.get(Calendar.DST_OFFSET);
+                int offsetMe = my_cal.get(Calendar.ZONE_OFFSET) + my_cal.get(Calendar.DST_OFFSET);
+                timeOffset = offsetMe - offsetNY;
+                
+            }
+            
+            Timestamp tsStart = selectedAppointment.getStartDate();
+            tsStart.setTime(tsStart.getTime() + timeOffset);
+            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a -");
+            Timestamp tsEnd = selectedAppointment.getEndDate();
+            tsEnd.setTime(tsEnd.getTime() + timeOffset);
+            SimpleDateFormat sdf2 = new SimpleDateFormat("hh:mm a MMMM, dd, yyyy");
+            
+            tf_appointmentTime.setText(sdf.format(tsStart) + sdf2.format(tsEnd));
+            tf_customerName.setText(selectedAppointment.getCustomerName());
+            tf_appointmentTitle.setText(selectedAppointment.getTitle());
+            tf_appointmentLocation.setText(selectedAppointment.getLocation());
+            tf_appointmentDescription.setText(selectedAppointment.getDescription());
+        } else {
+            tf_customerName.setText("");
+            tf_appointmentTime.setText("");
+            tf_appointmentTitle.setText("");
+            tf_appointmentLocation.setText("");
+            tf_appointmentDescription.setText("");
+        }
+    }
+
 }
-
-
