@@ -12,18 +12,18 @@ import javafx.collections.ObservableList;
  *
  * @author Michael
  */
-public class Appointments {
-    private static ObservableList<Appointment> allAppointments = FXCollections.observableArrayList();
+public class Customers {
+    private static ObservableList<Customer> allCustomers = FXCollections.observableArrayList();
     
-    public void addAppointment(Appointment apt){
-        allAppointments.add(apt);
+    public void addCustomer(Customer customer){
+        allCustomers.add(customer);
     }
     
-    public ObservableList<Appointment> getAppointmentList(){
-        return allAppointments;
+    public ObservableList<Customer> getCustomerList(){
+        return allCustomers;
     }
     
-    public void clearAppointments(){
-        allAppointments.clear();
+    public void clearCustomers(){
+        allCustomers.clear();
     }
 }
