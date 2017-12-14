@@ -1,6 +1,7 @@
 # Scheduler-Pro
 JavaFX SQL- Sample appointment scheduling program.
 Use of Java and SQL to authenticate username/password, fetch data from remote DB, analyze and construct reports based on data.
+
 Specification-
 
 A.  Create a log-in form that can determine the user’s location and translate log-in and error control messages (e.g., “The username and password did not match.”) into two languages.
