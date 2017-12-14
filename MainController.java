@@ -82,6 +82,13 @@ public class MainController implements Initializable {
     private TableColumn<ObservableList<Customer>, String> tblCol_customers_country;
     @FXML
     private TableColumn<ObservableList<Customer>, String> tblCol_customers_phone;
+    //Report tables and columns
+    @FXML
+    private TableView<ReportATItem> tbl_appointmentTypeReport;
+    @FXML
+    private TableColumn<ObservableList<ReportATItem>, String> tblCol_reportTotal;
+    @FXML
+    private TableColumn<ObservableList<ReportATItem>, String> tblCol_reportType;
     //Panes
     @FXML
     private Pane pane_login;
@@ -95,6 +102,8 @@ public class MainController implements Initializable {
     private Pane pane_createNewAppointment;
     @FXML
     private Pane pane_editAppointment;
+    @FXML
+    private Pane ap_reports;
     //Text Fields
     @FXML
     private TextField tf_userName;
@@ -114,8 +123,6 @@ public class MainController implements Initializable {
     private Text tf_appointmentLocation;
     @FXML
     private Text tf_appointmentDescription;
-    @FXML
-    private Text tf_creatingCustomerNotification;
     //Create Appointment text fields
     @FXML
     private TextField tf_createAppointment_title;
@@ -132,6 +139,10 @@ public class MainController implements Initializable {
     private ChoiceBox choiceBox_createAppointment_startTime;
     @FXML
     private ChoiceBox choiceBox_createAppointment_endTime;
+    @FXML
+    private ComboBox comboBox_reportTypeMonth;
+    @FXML
+    private ComboBox comboBox_reportTypeYear;
     //Edit Appointment text fields
     @FXML
     private TextField tf_editAppointment_title;
@@ -199,11 +210,16 @@ public class MainController implements Initializable {
     Appointments appointments = new Appointments();
     //Create Customers class to hold all customers data
     Customers customers = new Customers();
+    //Create ReportAT to hold report data
+    ReportATList reportATList = new ReportATList();
+
     //Create DB controller to initiate the query
     DBController dbController = new DBController();
     //String array of business hours to set up new appointment choice boxes
     ObservableList<String> hours = FXCollections.observableArrayList("8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM",
             "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM");
+    ObservableList<String> months = FXCollections.observableArrayList("January", "February", "March", "April", "May",
+            "June", "July", "August", "September", "October", "November", "December");
     ObservableList<String> locations = FXCollections.observableArrayList("Phoenix", "New York", "London");
     int editedAppointmentId;
 
@@ -258,6 +274,13 @@ public class MainController implements Initializable {
         choiceBox_editAppointmentEndTime.getItems().addAll(hours);
         //Add locations to comboBox for new appointments
         comboBox_selectLocation.getItems().addAll(locations);
+
+        //Reports Pane Set up
+        comboBox_reportTypeMonth.getItems().addAll(months);
+        for (int i = 0; i < 10; i++) {
+            comboBox_reportTypeYear.getItems().addAll(Calendar.getInstance().get(Calendar.YEAR) - 4 + i);
+        }
+
     }
 
     public void Login() {
@@ -271,7 +294,7 @@ public class MainController implements Initializable {
         appointments.clearAppointments();
         //A bit complex but I wanted the customer Name, not just his ID
         if (rb_monthly.isSelected()) {
-            String monthRange = getMonthStart() + " and " + getMonthEnd();
+            String monthRange = getMonthStart(datePicker_schedule.getValue()) + " and " + getMonthEnd(datePicker_schedule.getValue());
             sql = "Select ap.appointmentID,c.customerName,ap.title,ap.customerId,ap.description,ap.location,ap.contact,"
                     + "ap.url,ap.start,ap.end,ap.createDate,ap.createdBy,ap.lastUpdate,"
                     + "ap.lastUpdateBy from appointment AS ap JOIN customer AS c ON ap.customerID = c.customerID WHERE "
@@ -578,16 +601,14 @@ public class MainController implements Initializable {
     }
 
     //Determine first day of the month
-    private String getMonthStart() {
-        LocalDate dateSelected = datePicker_schedule.getValue();
+    private String getMonthStart(LocalDate dateSelected) {
         String sqlDateMonthStarts = "'" + Integer.toString(dateSelected.getYear()) + "-" + dateSelected.getMonthValue() + "-1'";
         return sqlDateMonthStarts;
     }
 
     //Determine last day of the month
-    private String getMonthEnd() {
-        LocalDate dateSelected = datePicker_schedule.getValue();
-        Calendar cal = new GregorianCalendar(dateSelected.getYear(), dateSelected.getMonthValue(), 1);
+    private String getMonthEnd(LocalDate dateSelected) {
+        Calendar cal = new GregorianCalendar(dateSelected.getYear(), dateSelected.getMonthValue()-1, 1);
         int numberOfDays = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
 
         String sqlDateMonthEnd = "'" + Integer.toString(dateSelected.getYear()) + "-" + dateSelected.getMonthValue() + "-" + numberOfDays + "'";
@@ -689,10 +710,12 @@ public class MainController implements Initializable {
 
     //Shows Customer Pane within Schedule Tab
     public void showCustomerPane() {
-        if (!ap_schedule.isDisabled()) {
+        if (!ap_schedule.isDisabled() || !ap_reports.isDisabled()) {
             //Hide current panes
             ap_schedule.setVisible(false);
             ap_schedule.setDisable(true);
+            ap_reports.setVisible(false);
+            ap_reports.setDisable(true);
             //Show customer pane
             ap_customers.setVisible(true);
             ap_customers.setDisable(false);
@@ -701,13 +724,14 @@ public class MainController implements Initializable {
 
     //Shows Schedule Pane within Schedule Tab
     public void showSchedulePane() {
-        if (!ap_customers.isDisabled()) {
+        if (!ap_customers.isDisabled() || !ap_reports.isDisabled()) {
             //Hide current panes
             ap_customers.setVisible(false);
             ap_customers.setDisable(true);
+            ap_reports.setVisible(false);
+            ap_reports.setDisable(true);
             //Show schedule pane            
             ap_schedule.setVisible(true);
-            ap_schedule.setManaged(true);
             ap_schedule.setDisable(false);
         }
     }
@@ -876,5 +900,29 @@ public class MainController implements Initializable {
         tf_editCustomerZip.setText("");
         tf_editCustomerCountry.setText("");
         tf_editCustomerPhone.setText("");
+    }
+
+    //Report Pane Handling
+    public void generateReports() {
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyyMMMMdd");
+        LocalDate ld = LocalDate.parse(comboBox_reportTypeYear.getValue().toString() + comboBox_reportTypeMonth.getValue().toString()+"01", dateFormatter);
+        String monthStart = getMonthStart(ld);
+        String monthEnd = getMonthEnd(ld);
+        String sql = "SELECT COUNT(title) AS Total,title AS Type from appointment WHERE start BETWEEN " + monthStart + " and " + monthEnd + " GROUP BY title";
+        System.out.println(sql);
+        WORK HERER!!!!!!!
+    }
+
+    public void showReportsPane() {
+        if (!ap_schedule.isDisabled() || !ap_customers.isDisabled()) {
+            //Hide current panes
+            ap_customers.setVisible(false);
+            ap_customers.setDisable(true);
+            ap_schedule.setVisible(false);
+            ap_schedule.setDisable(true);
+            //Show Reports Pane
+            ap_reports.setVisible(true);
+            ap_reports.setDisable(false);
+        }
     }
 }
