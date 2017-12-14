@@ -6,6 +6,7 @@ package database.scheduler.michael.peels.classes;
  */
 public class Customer {
     
+    private String id;
     private String name;
     private String street;
     private String city;
@@ -13,17 +14,23 @@ public class Customer {
     private String country;
     private String phone;
 
-    public Customer(String name, String street, String city, String zip, String country, String phone) {
+    public Customer(String name, String street, String city, String zip, String country, String phone,String id) {
         this.name = name;
         this.street = street;
         this.city = city;
         this.zip = zip;
         this.country = country;
         this.phone = phone;
+        this.id = id;
     }
 
     
-    
+    public String getId(){
+        return id;
+    }
+    public void setId(String id){
+        this.id = id;
+    }
     public String getName() {
         return name;
     }

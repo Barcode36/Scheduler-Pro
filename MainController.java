@@ -114,6 +114,8 @@ public class MainController implements Initializable {
     private Text tf_appointmentLocation;
     @FXML
     private Text tf_appointmentDescription;
+    @FXML
+    private Text tf_creatingCustomerNotification;
     //Create Appointment text fields
     @FXML
     private TextField tf_createAppointment_title;
@@ -137,6 +139,32 @@ public class MainController implements Initializable {
     private TextField tf_editAppointment_description;
     @FXML
     private TextField tf_editAppointment_contact;
+    //Create Customer Text Fields
+    @FXML
+    private TextField tf_newCustomerName;
+    @FXML
+    private TextField tf_newCustomerStreet;
+    @FXML
+    private TextField tf_newCustomerCity;
+    @FXML
+    private TextField tf_newCustomerZip;
+    @FXML
+    private TextField tf_newCustomerCountry;
+    @FXML
+    private TextField tf_newCustomerPhone;
+    //Edit Customer Text Fields
+    @FXML
+    private TextField tf_editCustomerName;
+    @FXML
+    private TextField tf_editCustomerStreet;
+    @FXML
+    private TextField tf_editCustomerCity;
+    @FXML
+    private TextField tf_editCustomerZip;
+    @FXML
+    private TextField tf_editCustomerCountry;
+    @FXML
+    private TextField tf_editCustomerPhone;
     //Edit Appointment Combo/Choice Boxes
     @FXML
     private ComboBox comboBox_editAppointmentCustomer;
@@ -158,8 +186,6 @@ public class MainController implements Initializable {
     //Buttons
     @FXML
     private Button btn_login;
-    @FXML
-    private Button btn_viewCustomer;
     @FXML
     private Button btn_showUpdateCustomerPane;
     @FXML
@@ -214,12 +240,14 @@ public class MainController implements Initializable {
         tblCol_customers_country.setCellValueFactory(new PropertyValueFactory<>("country"));
         tblCol_customers_phone.setCellValueFactory(new PropertyValueFactory<>("phone"));
         tbl_customers.setItems(customers.getCustomerList());
+
+        tbl_customers.getSelectionModel().selectedIndexProperty().addListener((obs, oldSelection, newSelection) -> {
+            updateEditCustomer(newSelection);
+        });
         updateCustomersTable();
         //Add all customer names to comboBox_selectCustomer - used to assign
         //customer to new appointment
-        customers.getCustomerList().forEach((customer) -> {
-            comboBox_selectCustomer.getItems().add(customer.getName());
-        });
+
         //Add hours to choiceBoxes for new appointment times
         choiceBox_createAppointment_startTime.getItems().addAll(hours);
         choiceBox_createAppointment_startTime.setTooltip(new Tooltip("Times set in location time zones"));
@@ -244,7 +272,7 @@ public class MainController implements Initializable {
         //A bit complex but I wanted the customer Name, not just his ID
         if (rb_monthly.isSelected()) {
             String monthRange = getMonthStart() + " and " + getMonthEnd();
-            sql = "Select ap.appointmentID,c.customerName,ap.title,ap.description,ap.location,ap.contact,"
+            sql = "Select ap.appointmentID,c.customerName,ap.title,ap.customerId,ap.description,ap.location,ap.contact,"
                     + "ap.url,ap.start,ap.end,ap.createDate,ap.createdBy,ap.lastUpdate,"
                     + "ap.lastUpdateBy from appointment AS ap JOIN customer AS c ON ap.customerID = c.customerID WHERE "
                     + "ap.start BETWEEN " + monthRange + " OR ap.end BETWEEN " + monthRange
@@ -252,7 +280,7 @@ public class MainController implements Initializable {
             setTextDisplay("monthly");
         } else {
             String weekRange = getWeekStart() + " and " + getWeekEnd();
-            sql = "Select ap.appointmentID,c.customerName,ap.title,ap.description,ap.location,ap.contact,"
+            sql = "Select ap.appointmentID,c.customerName,ap.customerId,ap.title,ap.description,ap.location,ap.contact,"
                     + "ap.url,ap.start,ap.end,ap.createDate,ap.createdBy,ap.lastUpdate,"
                     + "ap.lastUpdateBy from appointment AS ap JOIN customer AS c ON ap.customerID = c.customerID WHERE "
                     + "ap.start BETWEEN " + weekRange + " OR ap.end BETWEEN " + weekRange
@@ -261,53 +289,6 @@ public class MainController implements Initializable {
         }
         appointments = dbController.fetchAppointments(sql);
 
-    }
-
-    public void updateCustomersTable() {
-        String sql;
-        //Clear all appointments
-        customers.clearCustomers();
-        //Create SQL to get customer name, street,city,zip,country and phone
-        sql = "SELECT cust.customerName,a.address,city.city,a.postalCode,country.country, a.phone FROM customer AS cust JOIN address AS a ON cust.addressId = a.addressId JOIN "
-                + "city AS city ON a.cityId = city.cityId JOIN country AS country ON city.countryId = country.countryID";
-        customers = dbController.fetchCustomers(sql);
-
-    }
-
-    //Determine first day of the month
-    private String getMonthStart() {
-        LocalDate dateSelected = datePicker_schedule.getValue();
-        String sqlDateMonthStarts = "'" + Integer.toString(dateSelected.getYear()) + "-" + dateSelected.getMonthValue() + "-1'";
-        return sqlDateMonthStarts;
-    }
-
-    //Determine last day of the month
-    private String getMonthEnd() {
-        LocalDate dateSelected = datePicker_schedule.getValue();
-        Calendar cal = new GregorianCalendar(dateSelected.getYear(), dateSelected.getMonthValue(), 1);
-        int numberOfDays = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
-
-        String sqlDateMonthEnd = "'" + Integer.toString(dateSelected.getYear()) + "-" + dateSelected.getMonthValue() + "-" + numberOfDays + "'";
-        return sqlDateMonthEnd;
-    }
-
-    //Determine first day of the week
-    private String getWeekStart() {
-        LocalDate dateSelected = datePicker_schedule.getValue();
-        String weekStart = "'" + dateSelected.with(WeekFields.of(Locale.US).dayOfWeek(), 1L).toString() + "'";
-        return weekStart;
-    }
-
-    //Determine last day of the week
-    private String getWeekEnd() {
-        LocalDate dateSelected = datePicker_schedule.getValue();
-        String weekEnd = "'" + dateSelected.with(WeekFields.of(Locale.US).dayOfWeek(), 7L).toString() + "'";
-        return weekEnd;
-    }
-
-    //Close the program
-    public void closeApplication() {
-        Platform.exit();
     }
 
     //Display text to show current results being displayed
@@ -416,19 +397,19 @@ public class MainController implements Initializable {
             tf_appointmentDescription.setText(selectedAppointment.getDescription());
 
             //Change the Edit Appointment Pane Text if its visible
-            if (pane_editAppointment.isVisible()) {
-                comboBox_editAppointmentCustomer.setValue(selectedAppointment.getCustomerName());
-                tf_editAppointment_title.setText(selectedAppointment.getTitle());
-                tf_editAppointment_description.setText(selectedAppointment.getDescription());
-                comboBox_editAppointmentLocation.setValue(selectedAppointment.getLocation());
-                tf_editAppointment_contact.setText(selectedAppointment.getContact());
-                SimpleDateFormat editTimes = new SimpleDateFormat("h:mm a");
-                choiceBox_editAppointmentStartTime.setValue(editTimes.format(selectedAppointment.getStartDate()));
-                choiceBox_editAppointmentEndTime.setValue(editTimes.format(selectedAppointment.getEndDate()));
-                LocalDate locDate = LocalDate.parse(new SimpleDateFormat("yyyy-MM-dd").format(selectedAppointment.getStartDate()), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-                datePicker_editAppointment_date.setValue(locDate);
-                editedAppointmentId = selectedAppointment.getAptID();
-            }
+            //if (pane_editAppointment.isVisible()) {
+            comboBox_editAppointmentCustomer.setValue(selectedAppointment.getCustomerName());
+            tf_editAppointment_title.setText(selectedAppointment.getTitle());
+            tf_editAppointment_description.setText(selectedAppointment.getDescription());
+            comboBox_editAppointmentLocation.setValue(selectedAppointment.getLocation());
+            tf_editAppointment_contact.setText(selectedAppointment.getContact());
+            SimpleDateFormat editTimes = new SimpleDateFormat("h:mm a");
+            choiceBox_editAppointmentStartTime.setValue(editTimes.format(selectedAppointment.getStartDate()));
+            choiceBox_editAppointmentEndTime.setValue(editTimes.format(selectedAppointment.getEndDate()));
+            LocalDate locDate = LocalDate.parse(new SimpleDateFormat("yyyy-MM-dd").format(selectedAppointment.getStartDate()), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            datePicker_editAppointment_date.setValue(locDate);
+            editedAppointmentId = selectedAppointment.getAptID();
+            //}
 
         } else {
             tf_customerName.setText("");
@@ -436,30 +417,6 @@ public class MainController implements Initializable {
             tf_appointmentTitle.setText("");
             tf_appointmentLocation.setText("");
             tf_appointmentDescription.setText("");
-        }
-    }
-
-    //PANE HANDLING//
-    public void showCustomerPane() {
-        if (!ap_schedule.isDisabled()) {
-            //Hide current panes
-            ap_schedule.setVisible(false);
-            ap_schedule.setDisable(true);
-            //Show customer pane
-            ap_customers.setVisible(true);
-            ap_customers.setDisable(false);
-        }
-    }
-
-    public void showSchedulePane() {
-        if (!ap_customers.isDisabled()) {
-            //Hide current panes
-            ap_customers.setVisible(false);
-            ap_customers.setDisable(true);
-            //Show schedule pane            
-            ap_schedule.setVisible(true);
-            ap_schedule.setManaged(true);
-            ap_schedule.setDisable(false);
         }
     }
 
@@ -537,100 +494,6 @@ public class MainController implements Initializable {
             alert.setHeaderText(null);
             alert.setContentText("Please make a valid entry in all fields.");
             alert.showAndWait();
-        }
-    }
-
-    //Schedule Pane Handling
-    public void hideScheduleButtons() {
-        btn_showCreateAppointmentPane.setVisible(false);
-        btn_deleteSelectedAppointment.setVisible(false);
-        btn_showEditAppointmentPane.setVisible(false);
-        btn_showCreateAppointmentPane.setDisable(true);
-        btn_deleteSelectedAppointment.setDisable(true);
-        btn_showEditAppointmentPane.setDisable(true);
-    }
-
-    public void showScheduleButtons() {
-        btn_showCreateAppointmentPane.setVisible(true);
-        btn_showCreateAppointmentPane.setDisable(false);
-        btn_showEditAppointmentPane.setVisible(true);
-        btn_deleteSelectedAppointment.setVisible(true);
-        btn_showEditAppointmentPane.setDisable(false);
-        btn_deleteSelectedAppointment.setDisable(false);
-    }
-
-    public void showCreateAppointmentPane() {
-        hideScheduleButtons();
-
-        pane_createNewAppointment.setVisible(true);
-        pane_createNewAppointment.setDisable(false);
-    }
-
-    public void hideCreateAppointmentPane() {
-        pane_createNewAppointment.setVisible(false);
-        pane_createNewAppointment.setDisable(true);
-
-        showScheduleButtons();
-    }
-
-    public void showEditAppointmentPane() {
-        hideScheduleButtons();
-
-        pane_editAppointment.setVisible(true);
-        pane_editAppointment.setDisable(false);
-    }
-
-    public void hideEditAppointmentPane() {
-        pane_editAppointment.setVisible(false);
-        pane_editAppointment.setDisable(true);
-
-        showScheduleButtons();
-    }
-
-    //Customers Pane Handling
-    public void showUpdateCustomerPane() {
-        //Hide the button
-        btn_showUpdateCustomerPane.setVisible(false);
-        btn_showUpdateCustomerPane.setDisable(true);
-        //Show the update pane
-        pane_updateCustomer.setVisible(true);
-        pane_updateCustomer.setDisable(false);
-
-    }
-
-    public void hideCustomerPane() {
-        //Hide the pane
-        btn_showUpdateCustomerPane.setVisible(true);
-        btn_showUpdateCustomerPane.setDisable(false);
-        //Show the button
-        pane_updateCustomer.setVisible(false);
-        pane_updateCustomer.setDisable(true);
-    }
-
-    //Query DB to see if an appointments are within the next 15 minutes
-    private void checkForAptReminder() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String now = sdf.format(new Date());
-        String nowPlus15 = sdf.format(new Date(new Date().getTime() + (60000 * 15)));
-        String sql = "SELECT appointment.*,customer.customerName FROM appointment JOIN customer ON customer.customerId WHERE start BETWEEN '" + now + "' AND '"
-                + nowPlus15 + "' AND contact = '" + tf_loggedInUser.getText() + "'";
-        dbController.checkForReminder(sql);
-    }
-
-    //If schedule item is selected, confirm dialog then delete
-    public void deleteSelectedAppointment() {
-        if (tbl_schedule.getSelectionModel().getSelectedItem() != null) {
-            Alert alert = new Alert(AlertType.CONFIRMATION);
-            alert.setTitle("Confirmation Dialog");
-            alert.setHeaderText("Confirm deletion");
-            alert.setContentText("Are you sure you want to delete the selected appointment?");
-            alert.showAndWait().ifPresent(response -> {
-                if (response == ButtonType.OK) {
-                    String deleteSql = "DELETE FROM appointment where appointmentId ='" + tbl_schedule.getSelectionModel().getSelectedItem().getAptID() + "'"; 
-                    dbController.updateDB(deleteSql);
-                    updateScheduleTable();
-                }
-            });
         }
     }
 
@@ -714,6 +577,141 @@ public class MainController implements Initializable {
 
     }
 
+    //Determine first day of the month
+    private String getMonthStart() {
+        LocalDate dateSelected = datePicker_schedule.getValue();
+        String sqlDateMonthStarts = "'" + Integer.toString(dateSelected.getYear()) + "-" + dateSelected.getMonthValue() + "-1'";
+        return sqlDateMonthStarts;
+    }
+
+    //Determine last day of the month
+    private String getMonthEnd() {
+        LocalDate dateSelected = datePicker_schedule.getValue();
+        Calendar cal = new GregorianCalendar(dateSelected.getYear(), dateSelected.getMonthValue(), 1);
+        int numberOfDays = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+
+        String sqlDateMonthEnd = "'" + Integer.toString(dateSelected.getYear()) + "-" + dateSelected.getMonthValue() + "-" + numberOfDays + "'";
+        return sqlDateMonthEnd;
+    }
+
+    //Determine first day of the week
+    private String getWeekStart() {
+        LocalDate dateSelected = datePicker_schedule.getValue();
+        String weekStart = "'" + dateSelected.with(WeekFields.of(Locale.US).dayOfWeek(), 1L).toString() + "'";
+        return weekStart;
+    }
+
+    //Determine last day of the week
+    private String getWeekEnd() {
+        LocalDate dateSelected = datePicker_schedule.getValue();
+        String weekEnd = "'" + dateSelected.with(WeekFields.of(Locale.US).dayOfWeek(), 7L).toString() + "'";
+        return weekEnd;
+    }
+
+    //Close the program
+    public void closeApplication() {
+        Platform.exit();
+    }
+
+    //Query DB to see if an appointments are within the next 15 minutes
+    private void checkForAptReminder() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String now = sdf.format(new Date());
+        String nowPlus15 = sdf.format(new Date(new Date().getTime() + (60000 * 15)));
+        String sql = "SELECT appointment.*,customer.customerName FROM appointment JOIN customer ON customer.customerId WHERE start BETWEEN '" + now + "' AND '"
+                + nowPlus15 + "' AND contact = '" + tf_loggedInUser.getText() + "'";
+        dbController.checkForReminder(sql);
+    }
+
+    //If schedule item is selected, confirm dialog then delete
+    public void deleteSelectedAppointment() {
+        if (tbl_schedule.getSelectionModel().getSelectedItem() != null) {
+            Alert alert = new Alert(AlertType.CONFIRMATION);
+            alert.setTitle("Confirmation Dialog");
+            alert.setHeaderText("Confirm deletion");
+            alert.setContentText("Are you sure you want to delete the selected appointment?");
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    String deleteSql = "DELETE FROM appointment where appointmentId ='" + tbl_schedule.getSelectionModel().getSelectedItem().getAptID() + "'";
+                    dbController.updateDB(deleteSql);
+                    updateScheduleTable();
+                }
+            });
+        }
+    }
+
+    //Schedule Tab Pane Handling
+    public void hideScheduleButtons() {
+        btn_showCreateAppointmentPane.setVisible(false);
+        btn_deleteSelectedAppointment.setVisible(false);
+        btn_showEditAppointmentPane.setVisible(false);
+        btn_showCreateAppointmentPane.setDisable(true);
+        btn_deleteSelectedAppointment.setDisable(true);
+        btn_showEditAppointmentPane.setDisable(true);
+    }
+
+    public void showScheduleButtons() {
+        btn_showCreateAppointmentPane.setVisible(true);
+        btn_showCreateAppointmentPane.setDisable(false);
+        btn_showEditAppointmentPane.setVisible(true);
+        btn_deleteSelectedAppointment.setVisible(true);
+        btn_showEditAppointmentPane.setDisable(false);
+        btn_deleteSelectedAppointment.setDisable(false);
+    }
+
+    public void showCreateAppointmentPane() {
+        hideScheduleButtons();
+
+        pane_createNewAppointment.setVisible(true);
+        pane_createNewAppointment.setDisable(false);
+    }
+
+    public void hideCreateAppointmentPane() {
+        pane_createNewAppointment.setVisible(false);
+        pane_createNewAppointment.setDisable(true);
+
+        showScheduleButtons();
+    }
+
+    public void showEditAppointmentPane() {
+        hideScheduleButtons();
+
+        pane_editAppointment.setVisible(true);
+        pane_editAppointment.setDisable(false);
+    }
+
+    public void hideEditAppointmentPane() {
+        pane_editAppointment.setVisible(false);
+        pane_editAppointment.setDisable(true);
+
+        showScheduleButtons();
+    }
+
+    //Shows Customer Pane within Schedule Tab
+    public void showCustomerPane() {
+        if (!ap_schedule.isDisabled()) {
+            //Hide current panes
+            ap_schedule.setVisible(false);
+            ap_schedule.setDisable(true);
+            //Show customer pane
+            ap_customers.setVisible(true);
+            ap_customers.setDisable(false);
+        }
+    }
+
+    //Shows Schedule Pane within Schedule Tab
+    public void showSchedulePane() {
+        if (!ap_customers.isDisabled()) {
+            //Hide current panes
+            ap_customers.setVisible(false);
+            ap_customers.setDisable(true);
+            //Show schedule pane            
+            ap_schedule.setVisible(true);
+            ap_schedule.setManaged(true);
+            ap_schedule.setDisable(false);
+        }
+    }
+
     private void clearInputFields() {
         comboBox_selectCustomer.setValue(null);
         tf_createAppointment_title.setText("");
@@ -726,4 +724,157 @@ public class MainController implements Initializable {
 
     }
 
+    //Customer Pane Controls
+    public void updateCustomersTable() {
+        String sql;
+        //Clear all appointments
+        customers.clearCustomers();
+        //Create SQL to get customer name, street,city,zip,country and phone
+        sql = "SELECT cust.customerName,cust.customerId,a.address,city.city,a.postalCode,country.country, a.phone FROM customer AS cust JOIN address AS a ON cust.addressId = a.addressId JOIN "
+                + "city AS city ON a.cityId = city.cityId JOIN country AS country ON city.countryId = country.countryID";
+        customers = dbController.fetchCustomers(sql);
+        comboBox_selectCustomer.getItems().clear();
+        customers.getCustomerList().forEach((customer) -> {
+            comboBox_selectCustomer.getItems().add(customer.getName());
+            comboBox_editAppointmentCustomer.getItems().add(customer.getName());
+        });
+
+    }
+
+    public void createNewCustomer() {
+        String name = tf_newCustomerName.getText();
+        String street = tf_newCustomerStreet.getText();
+        String city = tf_newCustomerCity.getText();
+        String zip = tf_newCustomerZip.getText();
+        String country = tf_newCustomerCountry.getText();
+        String phone = tf_newCustomerPhone.getText();
+
+        if (name.trim().length() > 0
+                && street.trim().length() > 0
+                && city.trim().length() > 0
+                && zip.trim().length() > 0
+                && country.trim().length() > 0
+                && phone.trim().length() > 0) {
+
+            if (dbController.createCustomer(new Customer(name, street, city, zip, country, phone, null), tf_userName.getText())) {
+                updateCustomersTable();
+                clearCustomerInputFields();
+            } else {
+
+            }
+
+        } else {
+            Alert alert = new Alert(AlertType.WARNING);
+            alert.setTitle("Invalid Entry");
+            alert.setHeaderText(null);
+            alert.setContentText("Please make a valid entry in all fields.");
+            alert.showAndWait();
+        }
+    }
+
+    public void viewCustomerDetails() {
+        if (tbl_schedule.getSelectionModel().getSelectedItem() != null) {
+            customers.getCustomerList().forEach((customer) -> {
+                if (customer.getId().equals(tbl_schedule.getSelectionModel().getSelectedItem().getCustomerId())) {
+                    tbl_customers.getSelectionModel().select(customer);
+                }
+            });
+            showCustomerPane();
+        }
+
+    }
+
+    //Customers Pane Handling
+    public void showUpdateCustomerPane() {
+        //Hide the button
+        btn_showUpdateCustomerPane.setVisible(false);
+        btn_showUpdateCustomerPane.setDisable(true);
+        //Show the update pane
+        pane_updateCustomer.setVisible(true);
+        pane_updateCustomer.setDisable(false);
+
+    }
+
+    private void updateEditCustomer(Number newSelection) {
+        if (newSelection != null && tbl_customers.getSelectionModel().getSelectedItem() != null) {
+            Customer selectedCustomer = tbl_customers.getSelectionModel().getSelectedItem();
+            tf_editCustomerName.setText(selectedCustomer.getName());
+            tf_editCustomerStreet.setText(selectedCustomer.getStreet());
+            tf_editCustomerCity.setText(selectedCustomer.getCity());
+            tf_editCustomerZip.setText(selectedCustomer.getZip());
+            tf_editCustomerCountry.setText(selectedCustomer.getCountry());
+            tf_editCustomerPhone.setText(selectedCustomer.getPhone());
+
+        } else {
+            clearCustomerInputFields();
+        }
+    }
+
+    public void updateSelectedCustomer() {
+        String name = tf_editCustomerName.getText();
+        String street = tf_editCustomerStreet.getText();
+        String city = tf_editCustomerCity.getText();
+        String zip = tf_editCustomerZip.getText();
+        String country = tf_editCustomerCountry.getText();
+        String phone = tf_editCustomerPhone.getText();
+        String id = tbl_customers.getSelectionModel().getSelectedItem().getId();
+
+        if (name.trim().length() > 0
+                && street.trim().length() > 0
+                && city.trim().length() > 0
+                && zip.trim().length() > 0
+                && country.trim().length() > 0
+                && phone.trim().length() > 0) {
+
+            if (dbController.updateCustomer(new Customer(name, street, city, zip, country, phone, id), tf_userName.getText())) {
+                updateCustomersTable();
+                clearEditCustomerFields();
+            } else {
+
+            }
+
+        } else {
+            Alert alert = new Alert(AlertType.WARNING);
+            alert.setTitle("Invalid Entry");
+            alert.setHeaderText(null);
+            alert.setContentText("Please make a valid entry in all fields.");
+            alert.showAndWait();
+        }
+
+    }
+
+    //Hides Customer pane within the Schedule Tab
+    public void hideCustomerPane() {
+        //Hide the pane
+        btn_showUpdateCustomerPane.setVisible(true);
+        btn_showUpdateCustomerPane.setDisable(false);
+        //Show the button
+        pane_updateCustomer.setVisible(false);
+        pane_updateCustomer.setDisable(true);
+    }
+
+    public void clearCustomerInputFields() {
+        tf_newCustomerName.setText("");
+        tf_newCustomerStreet.setText("");
+        tf_newCustomerCity.setText("");
+        tf_newCustomerZip.setText("");
+        tf_newCustomerCountry.setText("");
+        tf_newCustomerPhone.setText("");
+
+        tf_editCustomerName.setText("");
+        tf_editCustomerStreet.setText("");
+        tf_editCustomerCity.setText("");
+        tf_editCustomerZip.setText("");
+        tf_editCustomerCountry.setText("");
+        tf_editCustomerPhone.setText("");
+    }
+
+    private void clearEditCustomerFields() {
+        tf_editCustomerName.setText("");
+        tf_editCustomerStreet.setText("");
+        tf_editCustomerCity.setText("");
+        tf_editCustomerZip.setText("");
+        tf_editCustomerCountry.setText("");
+        tf_editCustomerPhone.setText("");
+    }
 }

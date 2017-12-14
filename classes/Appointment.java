@@ -27,8 +27,11 @@ public class Appointment {
     private String createdBy;
     private Date lastUpdate;
     private String lastUpdateBy;
+    private String customerId;
 
-    public Appointment(int aptID, String customerName, String title, String description, String location, String contact, String url, Timestamp startDate, Timestamp endDate, Date createdDate, String createdBy, Date lastUpdate, String lastUpdateBy) {
+    
+    public Appointment(int aptID, String customerName, String title, String description, String location, String contact,
+            String url, Timestamp startDate, Timestamp endDate, Date createdDate, String createdBy, Date lastUpdate, String lastUpdateBy,String customerId) {
         this.aptID = aptID;
         this.customerName = customerName;
         this.title = title;
@@ -42,10 +45,18 @@ public class Appointment {
         this.createdBy = createdBy;
         this.lastUpdate = lastUpdate;
         this.lastUpdateBy = lastUpdateBy;
+        this.customerId = customerId;
     }
     
     
     
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
 
     public int getAptID() {
         return aptID;

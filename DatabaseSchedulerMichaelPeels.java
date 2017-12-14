@@ -13,7 +13,7 @@ import javafx.stage.Stage;
 
 /**
  *
- * @author Michael
+ * @author Michael Peels
  * username: test
  * password: test
  * 

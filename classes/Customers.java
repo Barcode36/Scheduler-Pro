@@ -13,17 +13,19 @@ import javafx.collections.ObservableList;
  * @author Michael
  */
 public class Customers {
+
     private static ObservableList<Customer> allCustomers = FXCollections.observableArrayList();
-    
-    public void addCustomer(Customer customer){
+
+    public void addCustomer(Customer customer) {
         allCustomers.add(customer);
     }
-    
-    public ObservableList<Customer> getCustomerList(){
+
+    public ObservableList<Customer> getCustomerList() {
         return allCustomers;
     }
-    
-    public void clearCustomers(){
+
+    public void clearCustomers() {
         allCustomers.clear();
     }
+
 }

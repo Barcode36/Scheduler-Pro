@@ -23,6 +23,11 @@
 
 <AnchorPane id="AnchorPane" prefHeight="781.0" prefWidth="1255.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="database.scheduler.michael.peels.MainController">
    <children>
+      <Text fx:id="tf_creatingCustomerNotification" layoutX="445.0" layoutY="271.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Creating New Customer" visible="false">
+         <font>
+            <Font name="HelveticaNeueLTPro-Roman" size="34.0" />
+         </font>
+      </Text>
       <Pane prefHeight="137.0" prefWidth="1255.0" style="-fx-background-color: #104BB0;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
          <children>
             <Text fill="WHITE" layoutX="14.0" layoutY="34.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Scheduler Pro" wrappingWidth="188.7440185546875">
@@ -142,7 +147,7 @@
                               <Font name="HelveticaNeueLTPro-Roman" size="17.0" />
                            </font>
                         </Text>
-                        <Button fx:id="btn_viewCustomer" layoutX="450.0" layoutY="50.0" mnemonicParsing="false" style="-fx-background-color: #104BB0;" text="View Customer" textFill="WHITE" />
+                        <Button fx:id="btn_viewCustomer" layoutX="450.0" layoutY="50.0" mnemonicParsing="false" onAction="#viewCustomerDetails" style="-fx-background-color: #104BB0;" text="View Customer" textFill="WHITE" />
                         <Pane layoutY="-1.0" prefHeight="31.0" prefWidth="556.0" style="-fx-background-color: #104bb0;">
                            <children>
                               <Text fill="WHITE" layoutY="21.0" strokeType="OUTSIDE" strokeWidth="0.0" style="-fx-text-alignment: center;" text="Appointment details" wrappingWidth="555.9999930858612">
@@ -363,20 +368,20 @@
                         <TextField fx:id="tf_newCustomerName" layoutX="136.0" layoutY="42.0" prefHeight="25.0" prefWidth="280.0" promptText="Name" />
                         <TextField fx:id="tf_newCustomerStreet" layoutX="136.0" layoutY="74.0" prefHeight="25.0" prefWidth="280.0" promptText="Street Address" />
                         <TextField fx:id="tf_newCustomerCity" layoutX="138.0" layoutY="107.0" prefHeight="25.0" prefWidth="280.0" promptText="City" />
+                        <TextField fx:id="tf_newCustomerZip" layoutX="138.0" layoutY="138.0" prefHeight="25.0" prefWidth="280.0" promptText="Zip" />
+                        <TextField fx:id="tf_newCustomerCountry" layoutX="138.0" layoutY="169.0" prefHeight="25.0" prefWidth="280.0" promptText="Country" />
                         <TextField fx:id="tf_newCustomerPhone" layoutX="136.0" layoutY="207.0" prefHeight="25.0" prefWidth="280.0" promptText="Phone Number" />
                         <Text fill="#104bb0" layoutX="14.0" layoutY="188.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Country:" wrappingWidth="65.74401893640606">
                            <font>
                               <Font name="HelveticaNeueLTPro-Roman" size="17.0" />
                            </font>
                         </Text>
-                        <TextField fx:id="tf_newCustomerCountry" layoutX="138.0" layoutY="169.0" prefHeight="25.0" prefWidth="280.0" promptText="Country" />
                         <Text fill="#104bb0" layoutX="14.0" layoutY="157.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Zip:" wrappingWidth="65.74401893640606">
                            <font>
                               <Font name="HelveticaNeueLTPro-Roman" size="17.0" />
                            </font>
                         </Text>
-                        <TextField fx:id="tf_newCustomerZip" layoutX="138.0" layoutY="138.0" prefHeight="25.0" prefWidth="280.0" promptText="Zip" />
-                        <Button fx:id="btn_viewCustomer1" layoutX="204.0" layoutY="246.0" mnemonicParsing="false" style="-fx-background-color: #104BB0;" text="Create Customer" textFill="WHITE" />
+                        <Button layoutX="204.0" layoutY="246.0" mnemonicParsing="false" onAction="#createNewCustomer" style="-fx-background-color: #104BB0;" text="Create Customer" textFill="WHITE" />
                      </children>
                      <effect>
                         <DropShadow />
@@ -421,20 +426,20 @@
                         <TextField fx:id="tf_editCustomerName" layoutX="136.0" layoutY="42.0" prefHeight="25.0" prefWidth="280.0" promptText="Name" />
                         <TextField fx:id="tf_editCustomerStreet" layoutX="136.0" layoutY="74.0" prefHeight="25.0" prefWidth="280.0" promptText="Street Address" />
                         <TextField fx:id="tf_editCustomerCity" layoutX="138.0" layoutY="107.0" prefHeight="25.0" prefWidth="280.0" promptText="City" />
+                        <TextField fx:id="tf_editCustomerZip" layoutX="138.0" layoutY="138.0" prefHeight="25.0" prefWidth="280.0" promptText="Zip" />
+                        <TextField fx:id="tf_editCustomerCountry" layoutX="138.0" layoutY="169.0" prefHeight="25.0" prefWidth="280.0" promptText="Country" />
                         <TextField fx:id="tf_editCustomerPhone" layoutX="136.0" layoutY="207.0" prefHeight="25.0" prefWidth="280.0" promptText="Phone Number" />
                         <Text fill="#104bb0" layoutX="14.0" layoutY="188.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Country:" wrappingWidth="65.74401893640606">
                            <font>
                               <Font name="HelveticaNeueLTPro-Roman" size="17.0" />
                            </font>
                         </Text>
-                        <TextField fx:id="tf_editCustomerCountry" layoutX="138.0" layoutY="169.0" prefHeight="25.0" prefWidth="280.0" promptText="Country" />
                         <Text fill="#104bb0" layoutX="14.0" layoutY="157.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Zip:" wrappingWidth="65.74401893640606">
                            <font>
                               <Font name="HelveticaNeueLTPro-Roman" size="17.0" />
                            </font>
                         </Text>
-                        <TextField fx:id="tf_editCustomerZip" layoutX="138.0" layoutY="138.0" prefHeight="25.0" prefWidth="280.0" promptText="Zip" />
-                        <Button fx:id="btn_viewCustomer11" layoutX="204.0" layoutY="246.0" mnemonicParsing="false" style="-fx-background-color: #104BB0;" text="Update Customer" textFill="WHITE" />
+                        <Button fx:id="btn_viewCustomer11" layoutX="204.0" layoutY="246.0" mnemonicParsing="false" onAction="#updateSelectedCustomer" style="-fx-background-color: #104BB0;" text="Update Customer" textFill="WHITE" />
                      </children>
                      <effect>
                         <DropShadow />
