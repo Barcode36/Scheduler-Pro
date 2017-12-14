@@ -40,13 +40,23 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.AnchorPane;
 
 /**
  * FXML Controller class
  *
- * @author Michael
+ *
+ * @author Michael Peels
+ * username: test
+ * password: test
+ * 
+ * alternate username: michael
+ * alternate password: password1
+ * 
+ * username + password are case sensitive
+ * 
  */
 public class MainController implements Initializable {
 
@@ -82,13 +92,36 @@ public class MainController implements Initializable {
     private TableColumn<ObservableList<Customer>, String> tblCol_customers_country;
     @FXML
     private TableColumn<ObservableList<Customer>, String> tblCol_customers_phone;
-    //Report tables and columns
+    //Report type tables and columns
     @FXML
     private TableView<ReportATItem> tbl_appointmentTypeReport;
     @FXML
     private TableColumn<ObservableList<ReportATItem>, String> tblCol_reportTotal;
     @FXML
     private TableColumn<ObservableList<ReportATItem>, String> tblCol_reportType;
+    //Report schedule tables and columns
+    @FXML
+    private TableView<Schedule> tbl_consultantSchedule;
+    @FXML
+    private TableColumn<ObservableList<Schedule>, String> tblCol_consultantSchedule_location;
+    @FXML
+    private TableColumn<ObservableList<Schedule>, String> tblCol_consultantSchedule_name;
+    @FXML
+    private TableColumn<ObservableList<Schedule>, String> tblCol_consultantSchedule_customer;
+    @FXML
+    private TableColumn<ObservableList<Schedule>, String> tblCol_consultantSchedule_title;
+    @FXML
+    private TableColumn<ObservableList<Schedule>, String> tblCol_consultantSchedule_description;
+    @FXML
+    private TableColumn<ObservableList<Schedule>, Date> tblCol_consultantSchedule_start;
+    @FXML
+    private TableColumn<ObservableList<Schedule>, Date> tblCol_consultantSchedule_end;
+    @FXML
+    private TableColumn<ObservableList<ConsultantHours>,Integer>tblCol_report_hoursHours;
+    @FXML
+    private TableColumn<ObservableList<ConsultantHours>,Integer>tblCol_report_hoursName;
+    @FXML
+    private TableView<ConsultantHours> tbl_report_consultantHours;
     //Panes
     @FXML
     private Pane pane_login;
@@ -143,6 +176,10 @@ public class MainController implements Initializable {
     private ComboBox comboBox_reportTypeMonth;
     @FXML
     private ComboBox comboBox_reportTypeYear;
+    @FXML
+    private ComboBox comboBox_reportScheduleMonth;
+    @FXML
+    private ComboBox comboBox_reportScheduleYear;
     //Edit Appointment text fields
     @FXML
     private TextField tf_editAppointment_title;
@@ -198,6 +235,12 @@ public class MainController implements Initializable {
     @FXML
     private Button btn_login;
     @FXML
+    private ToggleButton btn_schedule;
+    @FXML
+    private ToggleButton btn_customers;
+    @FXML
+    private ToggleButton btn_reports;
+    @FXML
     private Button btn_showUpdateCustomerPane;
     @FXML
     private Button btn_showCreateAppointmentPane;
@@ -212,7 +255,10 @@ public class MainController implements Initializable {
     Customers customers = new Customers();
     //Create ReportAT to hold report data
     ReportATList reportATList = new ReportATList();
-
+    //Create consultantSchedule to hold schedule data
+    ConsultantSchedules consultantSchedule = new ConsultantSchedules();
+    //Create hours list to hold consultant hours
+    ConsultantHoursList consultantHoursList = new ConsultantHoursList();
     //Create DB controller to initiate the query
     DBController dbController = new DBController();
     //String array of business hours to set up new appointment choice boxes
@@ -261,9 +307,23 @@ public class MainController implements Initializable {
             updateEditCustomer(newSelection);
         });
         updateCustomersTable();
-        //Add all customer names to comboBox_selectCustomer - used to assign
-        //customer to new appointment
-
+        //Add all appointment types report items to columns
+        tblCol_reportTotal.setCellValueFactory(new PropertyValueFactory<>("totalOfType"));
+        tblCol_reportType.setCellValueFactory(new PropertyValueFactory<>("type"));
+        tbl_appointmentTypeReport.setItems(reportATList.getAppointmentTypeReport());
+        //Add all schedule report items to columns
+        tblCol_consultantSchedule_name.setCellValueFactory(new PropertyValueFactory<>("consultant"));
+        tblCol_consultantSchedule_customer.setCellValueFactory(new PropertyValueFactory<>("customerName"));
+        tblCol_consultantSchedule_title.setCellValueFactory(new PropertyValueFactory<>("title"));
+        tblCol_consultantSchedule_description.setCellValueFactory(new PropertyValueFactory<>("description"));
+        tblCol_consultantSchedule_location.setCellValueFactory(new PropertyValueFactory<>("location"));
+        tblCol_consultantSchedule_start.setCellValueFactory(new PropertyValueFactory<>("start"));
+        tblCol_consultantSchedule_end.setCellValueFactory(new PropertyValueFactory<>("end"));
+        tbl_consultantSchedule.setItems(consultantSchedule.getConsultantSchedules());
+        //Add Consultant Hours report columns
+        tblCol_report_hoursName.setCellValueFactory(new PropertyValueFactory<>("consultant"));
+        tblCol_report_hoursHours.setCellValueFactory(new PropertyValueFactory<>("hours"));
+        tbl_report_consultantHours.setItems(consultantHoursList.getConsultantHoursList());
         //Add hours to choiceBoxes for new appointment times
         choiceBox_createAppointment_startTime.getItems().addAll(hours);
         choiceBox_createAppointment_startTime.setTooltip(new Tooltip("Times set in location time zones"));
@@ -276,9 +336,9 @@ public class MainController implements Initializable {
         comboBox_selectLocation.getItems().addAll(locations);
 
         //Reports Pane Set up
-        comboBox_reportTypeMonth.getItems().addAll(months);
-        for (int i = 0; i < 10; i++) {
-            comboBox_reportTypeYear.getItems().addAll(Calendar.getInstance().get(Calendar.YEAR) - 4 + i);
+        comboBox_reportScheduleMonth.getItems().addAll(months);
+        for (int i = 0; i < 6; i++) {
+            comboBox_reportScheduleYear.getItems().addAll(Calendar.getInstance().get(Calendar.YEAR) - 3 + i);
         }
 
     }
@@ -474,7 +534,7 @@ public class MainController implements Initializable {
                 LocalDate date = datePicker_createAppointment_date.getValue();
                 String startTime = choiceBox_createAppointment_startTime.getValue().toString();
                 String endTime = choiceBox_createAppointment_endTime.getValue().toString();
-
+                String user = tf_userName.getText();
                 //Format time to 24 hour
                 SimpleDateFormat date12Format = new SimpleDateFormat("hh:mm a");
                 SimpleDateFormat date24Format = new SimpleDateFormat("HH:mm");
@@ -495,7 +555,7 @@ public class MainController implements Initializable {
                     String incrementSql = "Select MAX(appointmentId)AS max FROM appointment";
                     int newId = dbController.getNewAppointmentId(incrementSql);
                     String sql = "INSERT INTO appointment (appointmentId,customerId,title,description,location,contact,url,start,end,createDate,createdBy,lastUpdateBy) VALUES('" + newId + "',(SELECT customerId FROM customer WHERE customerName = '" + customer + "'),'"
-                            + title + "','" + description + "','" + location + "','" + contact + "','urlHere',' " + startTime + "',' " + endTime + "',' " + sdf.format(now) + "',' " + "UserLoggedIn','SameUser')";
+                            + title + "','" + description + "','" + location + "','" + contact + "','urlHere',' " + startTime + "',' " + endTime + "',' " + sdf.format(now) + "',' " + user +"','"+user+"')";
 
                     //Execute Query to add appointment and refresh table to show it
                     dbController.updateDB(sql);
@@ -600,15 +660,21 @@ public class MainController implements Initializable {
 
     }
 
-    //Determine first day of the month
+    /*
+    Returns SQL friendly first day of input month
+    EX: '2017-1-1'
+     */
     private String getMonthStart(LocalDate dateSelected) {
         String sqlDateMonthStarts = "'" + Integer.toString(dateSelected.getYear()) + "-" + dateSelected.getMonthValue() + "-1'";
         return sqlDateMonthStarts;
     }
 
-    //Determine last day of the month
+    /*
+    Returns SQL friendly last day of input month
+    EXa: '2017-1-31'
+     */
     private String getMonthEnd(LocalDate dateSelected) {
-        Calendar cal = new GregorianCalendar(dateSelected.getYear(), dateSelected.getMonthValue()-1, 1);
+        Calendar cal = new GregorianCalendar(dateSelected.getYear(), dateSelected.getMonthValue() - 1, 1);
         int numberOfDays = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
 
         String sqlDateMonthEnd = "'" + Integer.toString(dateSelected.getYear()) + "-" + dateSelected.getMonthValue() + "-" + numberOfDays + "'";
@@ -720,6 +786,7 @@ public class MainController implements Initializable {
             ap_customers.setVisible(true);
             ap_customers.setDisable(false);
         }
+        btn_customers.setSelected(true);
     }
 
     //Shows Schedule Pane within Schedule Tab
@@ -734,6 +801,7 @@ public class MainController implements Initializable {
             ap_schedule.setVisible(true);
             ap_schedule.setDisable(false);
         }
+        btn_schedule.setSelected(true);
     }
 
     private void clearInputFields() {
@@ -868,6 +936,20 @@ public class MainController implements Initializable {
     }
 
     //Hides Customer pane within the Schedule Tab
+    public void showReportsPane() {
+        if (!ap_schedule.isDisabled() || !ap_customers.isDisabled()) {
+            //Hide current panes
+            ap_customers.setVisible(false);
+            ap_customers.setDisable(true);
+            ap_schedule.setVisible(false);
+            ap_schedule.setDisable(true);
+            //Show Reports Pane
+            ap_reports.setVisible(true);
+            ap_reports.setDisable(false);
+        }
+        btn_reports.setSelected(true);
+    }
+
     public void hideCustomerPane() {
         //Hide the pane
         btn_showUpdateCustomerPane.setVisible(true);
@@ -904,25 +986,29 @@ public class MainController implements Initializable {
 
     //Report Pane Handling
     public void generateReports() {
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyyMMMMdd");
-        LocalDate ld = LocalDate.parse(comboBox_reportTypeYear.getValue().toString() + comboBox_reportTypeMonth.getValue().toString()+"01", dateFormatter);
-        String monthStart = getMonthStart(ld);
-        String monthEnd = getMonthEnd(ld);
-        String sql = "SELECT COUNT(title) AS Total,title AS Type from appointment WHERE start BETWEEN " + monthStart + " and " + monthEnd + " GROUP BY title";
-        System.out.println(sql);
-        WORK HERER!!!!!!!
+        if (comboBox_reportScheduleMonth.getValue() != null && comboBox_reportScheduleYear.getValue() != null) {
+            //Appointment Types Report
+            reportATList.clearATReport();
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyyMMMMdd");
+            LocalDate ld = LocalDate.parse(comboBox_reportScheduleYear.getValue().toString() + comboBox_reportScheduleMonth.getValue().toString() + "01", dateFormatter);
+            String monthStart = getMonthStart(ld);
+            String monthEnd = getMonthEnd(ld);
+            String sql = "SELECT COUNT(title) AS Total,title AS Type from appointment WHERE start BETWEEN " + monthStart + " and " + monthEnd + " GROUP BY title";
+            dbController.fetchATReport(sql);
+
+            //Schedule Report
+            consultantSchedule.clearSchedules();
+            String scheduleSql = "Select a.createdBy,c.customerName,a.title,a.description,a.location,a.`start`,a.`end` "
+                    + "from appointment AS a join customer AS c ON a.customerId = c.customerId  "
+                    + "WHERE a.start BETWEEN " + monthStart + " AND " + monthEnd + " Order BY a.createdBy,a.start;";
+            dbController.fetchSchedules(scheduleSql);
+
+            //Consultant Hours Report
+            consultantHoursList.clearConsultantHours();
+            String hoursWorkedSQL = "select SUM(TIMEDIFF(end,start)/10000) AS hours,createdBy AS consultant from appointment WHERE start between " + monthStart + " and " + monthEnd + " group by createdBy";
+            dbController.fetchConsultantHours(hoursWorkedSQL);
+        }
+
     }
 
-    public void showReportsPane() {
-        if (!ap_schedule.isDisabled() || !ap_customers.isDisabled()) {
-            //Hide current panes
-            ap_customers.setVisible(false);
-            ap_customers.setDisable(true);
-            ap_schedule.setVisible(false);
-            ap_schedule.setDisable(true);
-            //Show Reports Pane
-            ap_reports.setVisible(true);
-            ap_reports.setDisable(false);
-        }
-    }
 }

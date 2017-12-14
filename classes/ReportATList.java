@@ -17,7 +17,7 @@ public class ReportATList {
     public ObservableList<ReportATItem> getAppointmentTypeReport(){
         return reportAppointmentTypes;
     }
-    public void clearAppointmentTypeReport(){
+    public void clearATReport(){
         reportAppointmentTypes.clear();
     }
             
