@@ -1,6 +1,10 @@
 package database.scheduler.michael.peels;
 
 import database.scheduler.michael.peels.classes.*;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -48,15 +52,12 @@ import javafx.scene.layout.AnchorPane;
  * FXML Controller class
  *
  *
- * @author Michael Peels
- * username: test
- * password: test
- * 
- * alternate username: michael
- * alternate password: password1
- * 
+ * @author Michael Peels username: test password: test
+ *
+ * alternate username: michael alternate password: password1
+ *
  * username + password are case sensitive
- * 
+ *
  */
 public class MainController implements Initializable {
 
@@ -117,9 +118,9 @@ public class MainController implements Initializable {
     @FXML
     private TableColumn<ObservableList<Schedule>, Date> tblCol_consultantSchedule_end;
     @FXML
-    private TableColumn<ObservableList<ConsultantHours>,Integer>tblCol_report_hoursHours;
+    private TableColumn<ObservableList<ConsultantHours>, Integer> tblCol_report_hoursHours;
     @FXML
-    private TableColumn<ObservableList<ConsultantHours>,Integer>tblCol_report_hoursName;
+    private TableColumn<ObservableList<ConsultantHours>, Integer> tblCol_report_hoursName;
     @FXML
     private TableView<ConsultantHours> tbl_report_consultantHours;
     //Panes
@@ -235,6 +236,8 @@ public class MainController implements Initializable {
     @FXML
     private Button btn_login;
     @FXML
+    private Button btn_cancelLogin;
+    @FXML
     private ToggleButton btn_schedule;
     @FXML
     private ToggleButton btn_customers;
@@ -248,6 +251,8 @@ public class MainController implements Initializable {
     private Button btn_showEditAppointmentPane;
     @FXML
     private Button btn_deleteSelectedAppointment;
+    @FXML
+    private Button btn_deleteSelectedCustomer;
 
     //Create appointments class to hold appointments
     Appointments appointments = new Appointments();
@@ -268,6 +273,21 @@ public class MainController implements Initializable {
             "June", "July", "August", "September", "October", "November", "December");
     ObservableList<String> locations = FXCollections.observableArrayList("Phoenix", "New York", "London");
     int editedAppointmentId;
+    //Error Messages
+    String invalidEntry = "Invalid Entry";
+    String error = "Error";
+    String incorrectUP = "Incorrect Username or Password";
+    String endStartTime = "End time must be after Start time!";
+    String makeValidEntry = "Please make a valid entry in all fields.";
+    String scheduleConflict = "Schedule Conflict";
+    String scheduleTimeIsTaken = "The selected time and location is taken. Please select a new time frame for this appointment.";
+    String confirmDelete = "Are you sure you want to delete the selected appointment?";
+    String confirmDeleteCustomer = "Are you sure you want to delete the selected appointment?";
+    String confirmationDialog = "Confirmation Dialog.";
+    String invalidCustomerData = "Invalid Customer Data";
+    String matchingCustomerFound = "A customer was found with matching name and address.";
+    String pendingAppointment = "Pending Appointment";
+    String pendingAppointmentText = "You have a meeting scheduled with ";
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -341,11 +361,48 @@ public class MainController implements Initializable {
             comboBox_reportScheduleYear.getItems().addAll(Calendar.getInstance().get(Calendar.YEAR) - 3 + i);
         }
 
+        //Locale.setDefault(Locale.FRANCE);
+        //If locale matches FRANCE or FRENCH then translate
+        if ((Locale.getDefault() == Locale.FRANCE) || (Locale.getDefault() == Locale.FRENCH)) {
+            translateFrench();
+        }
+    }
+
+    public void translateFrench() {
+        invalidEntry = "Entrée invalide";
+        error = "Erreur";
+        incorrectUP = "Identifiant ou mot de passe incorrect";
+        endStartTime = "L'heure de fin doit être après l'heure de début";
+        makeValidEntry = "Veuillez faire une entrée valide dans tous les champs.";
+        scheduleConflict = "Conflit d'horaire";
+        scheduleTimeIsTaken = "L'heure et l'emplacement choisis sont pris. Veuillez sélectionner un nouveau délai pour ce rendez-vous.";
+        confirmDelete = "Êtes-vous sûr de vouloir supprimer le rendez-vous sélectionné?";
+        confirmationDialog = "Boîte de dialogue de confirmation.";
+        invalidCustomerData = "Données client non valides";
+        matchingCustomerFound = "Un client a été trouvé avec le nom et l'adresse correspondants.";
+        pendingAppointment = "En attente de rendez-vous";
+        pendingAppointmentText = "Vous avez une réunion prévue avec ";
+        confirmDeleteCustomer = "Êtes-vous sûr de vouloir supprimer le rendez-vous sélectionné?";
+        tf_userName.setPromptText("Nom d'utilisateur");
+        tf_password.setPromptText("mot de passe");
+        btn_login.setText("s'identifier");
+        btn_cancelLogin.setText("Annuler");
     }
 
     public void Login() {
         btn_login.setDisable(true);
         checkValidLogin();
+    }
+
+    private void logUser(String userName) {
+        String log = userName + " -- " + new Date();
+        try (FileWriter fw = new FileWriter("UserLog.txt", true);
+                BufferedWriter bw = new BufferedWriter(fw);
+                PrintWriter out = new PrintWriter(bw);) {
+            out.println(log);
+        } catch (IOException e) {
+            //exception handling left as an exercise for the reader
+        }
     }
 
     private void updateScheduleTable() {
@@ -411,12 +468,12 @@ public class MainController implements Initializable {
                 updateScheduleTable();
                 checkForAptReminder();
                 setTextDisplay("monthly");
+                logUser(uName);
             } else {
                 btn_login.setDisable(false);
                 Alert alert = new Alert(AlertType.WARNING);
-                alert.setTitle("Error");
-                alert.setHeaderText(null);
-                alert.setContentText("Incorrect Username or Password");
+                alert.setTitle(error);
+                alert.setContentText(incorrectUP);
                 alert.showAndWait();
             }
         });
@@ -519,9 +576,8 @@ public class MainController implements Initializable {
             //ChoiceBoxes do not allow user to select time outside of business hours
             if (choiceBox_createAppointment_endTime.getSelectionModel().getSelectedIndex() <= choiceBox_createAppointment_startTime.getSelectionModel().getSelectedIndex()) {
                 Alert alert = new Alert(AlertType.WARNING);
-                alert.setTitle("Invalid Entry");
-                alert.setHeaderText(null);
-                alert.setContentText("End time must be after Start time!");
+                alert.setTitle(invalidEntry);
+                alert.setContentText(endStartTime);
                 alert.showAndWait();
 
             } else {
@@ -555,7 +611,7 @@ public class MainController implements Initializable {
                     String incrementSql = "Select MAX(appointmentId)AS max FROM appointment";
                     int newId = dbController.getNewAppointmentId(incrementSql);
                     String sql = "INSERT INTO appointment (appointmentId,customerId,title,description,location,contact,url,start,end,createDate,createdBy,lastUpdateBy) VALUES('" + newId + "',(SELECT customerId FROM customer WHERE customerName = '" + customer + "'),'"
-                            + title + "','" + description + "','" + location + "','" + contact + "','urlHere',' " + startTime + "',' " + endTime + "',' " + sdf.format(now) + "',' " + user +"','"+user+"')";
+                            + title + "','" + description + "','" + location + "','" + contact + "','urlHere','" + startTime + "','" + endTime + "','" + sdf.format(now) + "','" + user + "','" + user + "')";
 
                     //Execute Query to add appointment and refresh table to show it
                     dbController.updateDB(sql);
@@ -564,18 +620,16 @@ public class MainController implements Initializable {
                     clearInputFields();
                 } else {
                     Alert alert = new Alert(AlertType.WARNING);
-                    alert.setTitle("Schedule Conflict");
-                    alert.setHeaderText("The selected time and location is taken.");
-                    alert.setContentText("Please select a new time frame for this appointment.");
+                    alert.setTitle(scheduleConflict);
+                    alert.setContentText(scheduleTimeIsTaken);
                     alert.showAndWait();
                 }
             }
 
         } else {
             Alert alert = new Alert(AlertType.WARNING);
-            alert.setTitle("Invalid Entry");
-            alert.setHeaderText(null);
-            alert.setContentText("Please make a valid entry in all fields.");
+            alert.setTitle(invalidEntry);
+            alert.setContentText(makeValidEntry);
             alert.showAndWait();
         }
     }
@@ -595,9 +649,8 @@ public class MainController implements Initializable {
             //ChoiceBoxes do not allow user to select time outside of business hours
             if (choiceBox_editAppointmentEndTime.getSelectionModel().getSelectedIndex() <= choiceBox_editAppointmentStartTime.getSelectionModel().getSelectedIndex()) {
                 Alert alert = new Alert(AlertType.WARNING);
-                alert.setTitle("Invalid Entry");
-                alert.setHeaderText(null);
-                alert.setContentText("End time must be after Start time!");
+                alert.setTitle(invalidEntry);
+                alert.setContentText(endStartTime);
                 alert.showAndWait();
 
             } else {
@@ -643,18 +696,16 @@ public class MainController implements Initializable {
                     updateScheduleTable();
                 } else {
                     Alert alert = new Alert(AlertType.WARNING);
-                    alert.setTitle("Schedule Conflict");
-                    alert.setHeaderText("The selected time and location is taken.");
-                    alert.setContentText("Please select a new time frame for this appointment.");
+                    alert.setTitle(scheduleConflict);
+                    alert.setContentText(scheduleTimeIsTaken);
                     alert.showAndWait();
                 }
             }
 
         } else {
             Alert alert = new Alert(AlertType.WARNING);
-            alert.setTitle("Invalid Entry");
-            alert.setHeaderText(null);
-            alert.setContentText("Please make a valid entry in all fields.");
+            alert.setTitle(invalidEntry);
+            alert.setContentText(makeValidEntry);
             alert.showAndWait();
         }
 
@@ -705,18 +756,24 @@ public class MainController implements Initializable {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String now = sdf.format(new Date());
         String nowPlus15 = sdf.format(new Date(new Date().getTime() + (60000 * 15)));
-        String sql = "SELECT appointment.*,customer.customerName FROM appointment JOIN customer ON customer.customerId WHERE start BETWEEN '" + now + "' AND '"
-                + nowPlus15 + "' AND contact = '" + tf_loggedInUser.getText() + "'";
-        dbController.checkForReminder(sql);
+        String sql = "SELECT appointment.*,customer.customerName FROM appointment JOIN customer ON customer.customerId = appointment.customerId WHERE start BETWEEN '" + now + "' AND '"
+                + nowPlus15 + "' AND appointment.createdBy like '" + tf_loggedInUser.getText() + "'";
+        String reminder = dbController.checkForReminder(sql);
+        if (reminder != null) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle(pendingAppointment);
+            alert.setHeaderText(null);
+            alert.setContentText(pendingAppointmentText + reminder);
+            alert.showAndWait();
+        }
     }
 
     //If schedule item is selected, confirm dialog then delete
     public void deleteSelectedAppointment() {
         if (tbl_schedule.getSelectionModel().getSelectedItem() != null) {
             Alert alert = new Alert(AlertType.CONFIRMATION);
-            alert.setTitle("Confirmation Dialog");
-            alert.setHeaderText("Confirm deletion");
-            alert.setContentText("Are you sure you want to delete the selected appointment?");
+            alert.setTitle(confirmationDialog);
+            alert.setContentText(confirmDelete);
             alert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
                     String deleteSql = "DELETE FROM appointment where appointmentId ='" + tbl_schedule.getSelectionModel().getSelectedItem().getAptID() + "'";
@@ -852,15 +909,32 @@ public class MainController implements Initializable {
                 updateCustomersTable();
                 clearCustomerInputFields();
             } else {
-
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle(invalidCustomerData);
+                alert.setContentText(matchingCustomerFound);
+                alert.showAndWait();
             }
 
         } else {
             Alert alert = new Alert(AlertType.WARNING);
-            alert.setTitle("Invalid Entry");
-            alert.setHeaderText(null);
-            alert.setContentText("Please make a valid entry in all fields.");
+            alert.setTitle(invalidEntry);
+            alert.setContentText(makeValidEntry);
             alert.showAndWait();
+        }
+    }
+
+    public void deleteSelectedCustomer() {
+        if (tbl_customers.getSelectionModel().getSelectedItem() != null) {
+            Alert alert = new Alert(AlertType.CONFIRMATION);
+            alert.setTitle(confirmationDialog);
+            alert.setContentText(confirmDelete);
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    String deleteSql = "DELETE FROM customer where customerId ='" + tbl_customers.getSelectionModel().getSelectedItem().getId() + "'";
+                    dbController.updateDB(deleteSql);
+                    updateCustomersTable();
+                }
+            });
         }
     }
 
@@ -881,8 +955,11 @@ public class MainController implements Initializable {
         //Hide the button
         btn_showUpdateCustomerPane.setVisible(false);
         btn_showUpdateCustomerPane.setDisable(true);
+        btn_deleteSelectedCustomer.setVisible(false);
+        btn_deleteSelectedCustomer.setDisable(true);
         //Show the update pane
-        pane_updateCustomer.setVisible(true);
+        pane_updateCustomer
+                .setVisible(true);
         pane_updateCustomer.setDisable(false);
 
     }
@@ -927,9 +1004,8 @@ public class MainController implements Initializable {
 
         } else {
             Alert alert = new Alert(AlertType.WARNING);
-            alert.setTitle("Invalid Entry");
-            alert.setHeaderText(null);
-            alert.setContentText("Please make a valid entry in all fields.");
+            alert.setTitle(invalidEntry);
+            alert.setContentText(makeValidEntry);
             alert.showAndWait();
         }
 
@@ -957,6 +1033,8 @@ public class MainController implements Initializable {
         //Show the button
         pane_updateCustomer.setVisible(false);
         pane_updateCustomer.setDisable(true);
+        btn_deleteSelectedCustomer.setVisible(true);
+        btn_deleteSelectedCustomer.setDisable(false);
     }
 
     public void clearCustomerInputFields() {

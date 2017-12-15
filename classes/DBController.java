@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import javafx.scene.control.Alert;
 
 /**
  *
@@ -31,7 +30,8 @@ public class DBController {
         }
         return false;
     }
-    public void checkForReminder(String sql) {
+
+    public String checkForReminder(String sql) {
         try (Connection con = DriverManager.getConnection(host, userName, pass)) {
             Statement stmt = con.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
@@ -39,21 +39,15 @@ public class DBController {
                 String user = rs.getString("customerName");
                 String aptLocation = rs.getString("location");
                 String descrip = rs.getString("description");
-
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("Pending Appointment");
-                alert.setHeaderText("You have an appointment very soon.");
-                alert.setContentText("You are scheduled to be meeting with " + user + " in " + aptLocation
-                        + " for " + descrip);
-                alert.showAndWait();
-
+                return  user + ", "  + aptLocation + ", " + descrip;
             }
         } catch (SQLException err) {
             System.out.println("Error retrieving customers: " + err.getMessage());
         }
+        return null;
     }
 
-    public void fetchATReport(String sql){
+    public void fetchATReport(String sql) {
         ReportATList rpt = new ReportATList();
         try (Connection con = DriverManager.getConnection(host, userName, pass)) {
             Statement stmt = con.createStatement();
@@ -61,14 +55,15 @@ public class DBController {
             while (rs.next()) {
                 rpt.addReportItem(new ReportATItem(rs.getString("Total"),
                         rs.getString("Type")
-                        ));
+                ));
             }
 
         } catch (SQLException err) {
             System.out.println("Error retrieving appointment type report: " + err.getMessage());
         }
     }
-    public void fetchSchedules(String sql){
+
+    public void fetchSchedules(String sql) {
         ConsultantSchedules cs = new ConsultantSchedules();
         try (Connection con = DriverManager.getConnection(host, userName, pass)) {
             Statement stmt = con.createStatement();
@@ -87,7 +82,8 @@ public class DBController {
             System.out.println("Error retrieving schedules report: " + err.getMessage());
         }
     }
-    public void fetchConsultantHours(String sql){
+
+    public void fetchConsultantHours(String sql) {
         ConsultantHoursList hoursList = new ConsultantHoursList();
         try (Connection con = DriverManager.getConnection(host, userName, pass)) {
             Statement stmt = con.createStatement();
@@ -101,6 +97,7 @@ public class DBController {
             System.out.println("Error retrieving consultant hours report: " + err.getMessage());
         }
     }
+
     public Appointments fetchAppointments(String sql) {
         Appointments appointments = new Appointments();
         //For each row, create a new appointment and add to the list of appointments
@@ -129,6 +126,7 @@ public class DBController {
         }
         return appointments;
     }
+
     public Customers fetchCustomers(String sql) {
         Customers customers = new Customers();
         try (Connection con = DriverManager.getConnection(host, userName, pass)) {
@@ -149,7 +147,7 @@ public class DBController {
         }
         return customers;
     }
-    
+
     public void updateDB(String SQL) {
         try (Connection con = DriverManager.getConnection(host, userName, pass);) {
             Statement stmt = con.createStatement();
@@ -185,7 +183,6 @@ public class DBController {
         }
         return false;
     }
-    
 
     public Boolean createCustomer(Customer customer, String user) {
         Date now = new Date();
@@ -202,11 +199,6 @@ public class DBController {
             ResultSet rs = stmt.executeQuery(sql);
             // If Customer name and Adress already exist, dont duplicate!
             if (rs.next()) {
-                Alert alert = new Alert(Alert.AlertType.WARNING);
-                alert.setTitle("Invalid Customer Data");
-                alert.setHeaderText("Preexisting Customer Data");
-                alert.setContentText("A customer was found with matching name and address.");
-                alert.showAndWait();
                 return false;
                 //Else create the customer!
             } else {
@@ -322,6 +314,6 @@ public class DBController {
         updateDB(updateSQL);
         return true;
 
-    }    
+    }
 
 }

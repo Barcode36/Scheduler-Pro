@@ -445,7 +445,12 @@
                         <DropShadow />
                      </effect>
                   </Pane>
-                  <Button fx:id="btn_showUpdateCustomerPane" layoutX="720.0" layoutY="348.0" mnemonicParsing="false" onAction="#showUpdateCustomerPane" prefHeight="43.0" prefWidth="237.0" style="-fx-background-color: #104BB0;" text="Update Selected Customer" textFill="WHITE">
+                  <Button fx:id="btn_showUpdateCustomerPane" layoutX="720.0" layoutY="391.0" mnemonicParsing="false" onAction="#showUpdateCustomerPane" prefHeight="43.0" prefWidth="237.0" style="-fx-background-color: #104BB0;" text="Update Selected Customer" textFill="WHITE">
+                     <font>
+                        <Font name="HelveticaNeueLTPro-Roman" size="15.0" />
+                     </font>
+                  </Button>
+                  <Button fx:id="btn_deleteSelectedCustomer" layoutX="720.0" layoutY="557.0" mnemonicParsing="false" onAction="#deleteSelectedCustomer" prefHeight="43.0" prefWidth="237.0" style="-fx-background-color: rgba(250,0,5,.8);" text="Delete Selected Customer" textFill="WHITE">
                      <font>
                         <Font name="HelveticaNeueLTPro-Roman" size="15.0" />
                      </font>
@@ -541,12 +546,12 @@
                   </Text>
                   <TextField fx:id="tf_userName" layoutX="118.0" layoutY="95.0" prefHeight="31.0" prefWidth="149.0" promptText="User Name:" />
                   <PasswordField fx:id="tf_password" layoutX="118.0" layoutY="135.0" prefHeight="31.0" prefWidth="149.0" promptText="Password:" />
-                  <Button fx:id="btn_login" layoutX="92.0" layoutY="193.0" mnemonicParsing="false" onAction="#Login" prefHeight="25.0" prefWidth="85.0" style="-fx-background-color: #333;" text="Login" textFill="WHITE">
+                  <Button fx:id="btn_login" layoutX="72.0" layoutY="193.0" mnemonicParsing="false" onAction="#Login" prefHeight="31.0" prefWidth="105.0" style="-fx-background-color: #333;" text="Login" textFill="WHITE">
                      <font>
                         <Font name="HelveticaNeueLTPro-Roman" size="15.0" />
                      </font>
                   </Button>
-                  <Button layoutX="203.0" layoutY="193.0" mnemonicParsing="false" onAction="#closeApplication" prefHeight="25.0" prefWidth="85.0" style="-fx-background-color: #333;" text="Cancel" textFill="WHITE">
+                  <Button fx:id="btn_cancelLogin" layoutX="203.0" layoutY="193.0" mnemonicParsing="false" onAction="#closeApplication" prefHeight="31.0" prefWidth="105.0" style="-fx-background-color: #333;" text="Cancel" textFill="WHITE">
                      <font>
                         <Font name="HelveticaNeueLTPro-Roman" size="15.0" />
                      </font>
